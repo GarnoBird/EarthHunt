@@ -285,7 +285,6 @@ function tmplHunt(){
       <div style="color:#ffffff55;font-size:12px;line-height:1.6;">No distance. No location.<br/>Just a direction. Go find it.</div>
     </div>
     <button style="background:transparent;border:1px solid #ffffff1a;border-radius:10px;color:#ffffff33;padding:10px;font-size:13px;width:100%;" onclick="leaveHunt()">← Leave hunt</button>
-    <div id="hunt-debug" style="background:#ffffff08;border-radius:8px;padding:10px;font-size:11px;font-family:monospace;color:#ffffff55;line-height:1.8;"></div>
   </div>`;
 }
 
@@ -294,7 +293,6 @@ function updateCompass(){
   if(S.found){ render(); return; }
   const arrow = document.getElementById('compass-arrow');
   const status = document.getElementById('hunt-status');
-  const dbg = document.getElementById('hunt-debug');
   if(!arrow || !status) return;
 
   if(!S.userPos){
@@ -318,14 +316,6 @@ function updateCompass(){
       <div style="color:#ffffff44;font-size:12px;margin-top:4px;letter-spacing:2px;">${cardinal(S.displayBearing)}</div>`;
   }
 
-  // Debug panel — shows raw values so we can see what's happening
-  if(dbg){
-    dbg.innerHTML = `
-      <div>GPS: ${S.userPos ? S.userPos.lat.toFixed(4)+', '+S.userPos.lon.toFixed(4) : 'waiting…'}</div>
-      <div>Bearing to treasure: ${S.gpsBearing != null ? Math.round(S.gpsBearing)+'°' : '—'}</div>
-      <div>Compass heading: ${S.heading != null ? Math.round(S.heading)+'°' : 'not available'}</div>
-      <div>Display bearing: ${S.displayBearing != null ? Math.round(S.displayBearing)+'°' : '—'}</div>`;
-  }
 }
 
 // ── Navigation ───────────────────────────────────────────────────────────────
