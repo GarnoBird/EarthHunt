@@ -47,6 +47,20 @@ input,textarea{font-family:'DM Sans',sans-serif;}
 <body>
 <div class="card" id="app"></div>
 <script>
+// ── Global error catcher — shows crashes on screen instead of blank page ─────
+window.onerror = function(msg, src, line, col, err){
+  const app = document.getElementById('app');
+  if(app) app.innerHTML = `
+    <div style="color:#ff8a8a;font-family:monospace;font-size:12px;line-height:1.8;padding:8px;">
+      <div style="font-size:16px;margin-bottom:12px;">⚠️ Error — please screenshot this and share it</div>
+      <div><b>Message:</b> ${msg}</div>
+      <div><b>Line:</b> ${line}:${col}</div>
+      <div><b>File:</b> ${src}</div>
+      <div><b>Detail:</b> ${err ? err.stack : 'none'}</div>
+    </div>`;
+  return false;
+};
+
 // ── Constants ────────────────────────────────────────────────────────────────
 const EARTH_R = 6371000;
 const FOUND_M = 50;
