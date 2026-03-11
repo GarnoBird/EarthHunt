@@ -241,10 +241,10 @@ function compassSVG(){
     <circle cx="120" cy="120" r="119" fill="url(#cbg)" stroke="#ffffff18" stroke-width="2"/>
     ${ticks}
     ${labels}
-    <g id="compass-arrow" style="transform-origin:120px 120px;transform-box:fill-box;">
+    <g id="compass-arrow" transform="rotate(0,120,120)">
       <polygon points="120,20 134,110 120,100 106,110" fill="#e8334a" stroke="#e8334a" stroke-width="1"/>
       <polygon points="120,220 134,130 120,140 106,130" fill="#ffffff55" stroke="#ffffff33" stroke-width="1"/>
-      <circle cx="120" cy="120" r="10" fill="#0f3460" stroke="#e8334a" stroke-width="3" id="arr-dot"/>
+      <circle cx="120" cy="120" r="10" fill="#0f3460" stroke="#e8334a" stroke-width="3"/>
     </g>
   </svg>`;
 }
@@ -298,13 +298,20 @@ function updateCompass(){
   if(!arrow || !status) return;
 
   if(!S.userPos){
-    arrow.style.transition = 'none';
-    arrow.style.transform = 'rotate(0deg)';
-    arrow.style.animation = 'spin 3s linear infinite';
+    arrow.setAttribute('transform', 'rotate(0,120,120)');
+    // Spin via repeated updates while waiting
+    if(!S._spinInterval){
+      let deg = 0;
+      S._spinInterval = setInterval(() => {
+        deg = (deg + 3) % 360;
+        const a = document.getElementById('compass-arrow');
+        if(a) a.setAttribute('transform', `rotate(${deg},120,120)`);
+        else { clearInterval(S._spinInterval); S._spinInterval = null; }
+      }, 16);
+    }
   } else {
-    arrow.style.animation = 'none';
-    arrow.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)';
-    arrow.style.transform = `rotate(${S.displayBearing}deg)`;
+    if(S._spinInterval){ clearInterval(S._spinInterval); S._spinInterval = null; }
+    arrow.setAttribute('transform', `rotate(${S.displayBearing},120,120)`);
     status.innerHTML = `
       <div style="color:#ffffff22;font-size:11px;letter-spacing:3px;margin-bottom:4px;">THE TREASURE LIES</div>
       <div class="cinzel" style="font-size:36px;font-weight:700;letter-spacing:2px;">${Math.round(S.displayBearing)}°</div>
@@ -505,6 +512,7 @@ function startHunt(hunt){
 function stopHunt(){
   if(S.watchId){ navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
   if(S.orientHandler){ window.removeEventListener('deviceorientation', S.orientHandler, true); S.orientHandler = null; }
+  if(S._spinInterval){ clearInterval(S._spinInterval); S._spinInterval = null; }
 }
 
 function leaveHunt(){
