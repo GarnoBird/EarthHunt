@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -36,6 +37,7 @@ input,textarea{font-family:'DM Sans',sans-serif;}
 #map-picker{width:100%;height:260px;border-radius:14px;border:2px solid #ffffff22;overflow:hidden;cursor:crosshair;}
 .leaflet-container{background:#0f1923;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.spinning{animation:spin 3s linear infinite;transform-origin:center;transform-box:fill-box;}
 @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
 @keyframes pulseGlow{0%,100%{opacity:.4}50%{opacity:1}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -54,75 +56,76 @@ function toRad(d){ return d * Math.PI / 180; }
 function toDeg(r){ return r * 180 / Math.PI; }
 
 function bearing(from, to){
-  const dLon = toRad(to.lon - from.lon);
-  const la1 = toRad(from.lat), la2 = toRad(to.lat);
-  const y = Math.sin(dLon) * Math.cos(la2);
-  const x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dLon);
-  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+const dLon = toRad(to.lon - from.lon);
+const la1 = toRad(from.lat), la2 = toRad(to.lat);
+const y = Math.sin(dLon) * Math.cos(la2);
+const x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dLon);
+return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
 function distance(from, to){
-  const dLat = toRad(to.lat - from.lat), dLon = toRad(to.lon - from.lon);
-  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLon/2)**2;
-  return EARTH_R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+const dLat = toRad(to.lat - from.lat), dLon = toRad(to.lon - from.lon);
+const a = Math.sin(dLat/2)**2 + Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLon/2)**2;
+return EARTH_R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 function cardinal(d){
-  return ["N","NE","E","SE","S","SW","W","NW"][Math.round(d/45) % 8];
+return [“N”,“NE”,“E”,“SE”,“S”,“SW”,“W”,“NW”][Math.round(d/45) % 8];
 }
 
 // ── Encode / Decode ──────────────────────────────────────────────────────────
 function encode(lat, lon, name){
-  const json = JSON.stringify({lat, lon, name, ts: Date.now()});
-  return btoa(json).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+const json = JSON.stringify({lat, lon, name, ts: Date.now()});
+return btoa(json).replace(/=/g,’’).replace(/+/g,’-’).replace(///g,’_’);
 }
 
 function decode(code){
-  try {
-    const b64 = code.trim().replace(/-/g,'+').replace(/_/g,'/');
-    const pad = (4 - b64.length % 4) % 4;
-    const obj = JSON.parse(atob(b64 + '='.repeat(pad)));
-    if (typeof obj.lat === 'number' && typeof obj.lon === 'number') return obj;
-  } catch(e) {}
-  return null;
+try {
+const b64 = code.trim().replace(/-/g,’+’).replace(/_/g,’/’);
+const pad = (4 - b64.length % 4) % 4;
+const obj = JSON.parse(atob(b64 + ‘=’.repeat(pad)));
+if (typeof obj.lat === ‘number’ && typeof obj.lon === ‘number’) return obj;
+} catch(e) {}
+return null;
 }
 
 // ── App State ────────────────────────────────────────────────────────────────
 const S = {
-  screen: 'home',   // home | hide | share | join | hunt
-  hunt: null,
-  shareCode: null,
-  shareName: null,
-  // hunt runtime
-  watchId: null,
-  orientHandler: null,
-  rawBearing: null,
-  heading: null,
-  userPos: null,
-  found: false,
-  // map
-  pickMap: null,
-  pickMarker: null,
-  pickedLat: null,
-  pickedLon: null,
+screen: ‘home’,   // home | hide | share | join | hunt
+hunt: null,
+shareCode: null,
+shareName: null,
+// hunt runtime
+watchId: null,
+orientHandler: null,
+rawBearing: null,
+heading: null,
+userPos: null,
+found: false,
+// map
+pickMap: null,
+pickMarker: null,
+pickedLat: null,
+pickedLon: null,
 };
 
 // ── Render dispatcher ────────────────────────────────────────────────────────
 function render(){
-  const app = document.getElementById('app');
-  if (!app) return;
-  switch(S.screen){
-    case 'home':  app.innerHTML = tmplHome();  break;
-    case 'hide':  app.innerHTML = tmplHide();  setTimeout(initMap, 0); break;
-    case 'share': app.innerHTML = tmplShare(); break;
-    case 'join':  app.innerHTML = tmplJoin();  break;
-    case 'hunt':  app.innerHTML = tmplHunt();  break;
-  }
+const app = document.getElementById(‘app’);
+if (!app) return;
+switch(S.screen){
+case ‘home’:  app.innerHTML = tmplHome();  break;
+case ‘hide’:  app.innerHTML = tmplHide();  setTimeout(initMap, 0); break;
+case ‘share’: app.innerHTML = tmplShare(); break;
+case ‘join’:  app.innerHTML = tmplJoin();  break;
+case ‘hunt’:  app.innerHTML = tmplHunt();  break;
+}
 }
 
 // ── Templates ────────────────────────────────────────────────────────────────
 function tmplHome(){
-  return `
+return `
+
   <div style="text-align:center;margin-bottom:28px;">
     <div style="font-size:36px;margin-bottom:8px;">🧭</div>
     <div class="cinzel" style="font-size:22px;letter-spacing:2px;">EARTH HUNT</div>
@@ -139,7 +142,8 @@ function tmplHome(){
 }
 
 function tmplHide(){
-  return `
+return `
+
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
     <button class="btn-ghost" style="width:auto;padding:6px 10px;font-size:16px;border-radius:8px;" onclick="goScreen('home')">←</button>
     <div class="cinzel" style="color:#e8c84a;font-size:15px;letter-spacing:2px;">HIDE TREASURE</div>
@@ -163,8 +167,9 @@ function tmplHide(){
 }
 
 function tmplShare(){
-  const url = window.location.origin + window.location.pathname + '?hunt=' + S.shareCode;
-  return `
+const url = window.location.origin + window.location.pathname + ‘?hunt=’ + S.shareCode;
+return `
+
   <div class="gap fade-in" style="align-items:center;text-align:center;">
     <div style="font-size:48px;">🗺️</div>
     <div>
@@ -185,7 +190,8 @@ function tmplShare(){
 }
 
 function tmplJoin(){
-  return `
+return `
+
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
     <button class="btn-ghost" style="width:auto;padding:6px 10px;font-size:16px;border-radius:8px;" onclick="goScreen('home')">←</button>
     <div class="cinzel" style="color:#e8c84a;font-size:15px;letter-spacing:2px;">JOIN A HUNT</div>
@@ -202,54 +208,27 @@ function tmplJoin(){
 }
 
 function compassSVG(){
-  const ticks = Array.from({length:36}, (_,i) => {
-    const a=i*10, r=toRad(a-90), big=a%90===0, med=a%45===0, len=big?14:med?9:5;
-    const x1=120+104*Math.cos(r), y1=120+104*Math.sin(r);
-    const x2=120+(104-len)*Math.cos(r), y2=120+(104-len)*Math.sin(r);
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${big?'#ffffff66':'#ffffff22'}" stroke-width="${big?2:1}"/>`;
-  }).join('');
+const ticks = Array.from({length:36}, (_,i) => {
+const a=i*10, r=toRad(a-90), big=a%90===0, med=a%45===0, len=big?14:med?9:5;
+const x1=120+104*Math.cos(r), y1=120+104*Math.sin(r);
+const x2=120+(104-len)*Math.cos(r), y2=120+(104-len)*Math.sin(r);
+return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${big?'#ffffff66':'#ffffff22'}" stroke-width="${big?2:1}"/>`;
+}).join(’’);
 
-  const labels = [['N',0],['E',90],['S',180],['W',270]].map(([l,deg]) => {
-    const r=toRad(deg-90), x=120+98*Math.cos(r), y=120+98*Math.sin(r);
-    return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle"
-      font-family="Cinzel,serif" font-size="${l==='N'?13:11}" fill="${l==='N'?'#e8c84a':'#ffffff66'}"
-      font-weight="${l==='N'?700:400}" letter-spacing="2">${l}</text>`;
-  }).join('');
+const labels = [[‘N’,0],[‘E’,90],[‘S’,180],[‘W’,270]].map(([l,deg]) => {
+const r=toRad(deg-90), x=120+98*Math.cos(r), y=120+98*Math.sin(r);
+return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="Cinzel,serif" font-size="${l==='N'?13:11}" fill="${l==='N'?'#e8c84a':'#ffffff66'}" font-weight="${l==='N'?700:400}" letter-spacing="2">${l}</text>`;
+}).join(’’);
 
-  return `<svg id="compass-svg" width="240" height="240" viewBox="0 0 240 240" style="display:block;margin:0 auto;">
-    <defs>
-      <radialGradient id="cbg" cx="50%" cy="50%">
-        <stop offset="0%" stop-color="#0f3460"/>
-        <stop offset="100%" stop-color="#1a1a2e"/>
-      </radialGradient>
-    </defs>
-    <circle cx="120" cy="120" r="119" fill="url(#cbg)" stroke="#ffffff18" stroke-width="2"/>
-    ${ticks}
-    ${labels}
-    <g id="compass-arrow" style="transform-origin:120px 120px;">
-      <polygon id="arr-n" points="120,88 132,120 120,112 108,120" fill="#e8334a"/>
-      <polygon points="120,152 132,120 120,128 108,120" fill="#ffffff33"/>
-      <circle cx="120" cy="120" r="7" fill="#0f3460" stroke="#e8334a" stroke-width="2" id="arr-dot"/>
-    </g>
-  </svg>`;
+return `<svg id="compass-svg" width="240" height="240" viewBox="0 0 240 240" style="display:block;margin:0 auto;"> <defs> <radialGradient id="cbg" cx="50%" cy="50%"> <stop offset="0%" stop-color="#0f3460"/> <stop offset="100%" stop-color="#1a1a2e"/> </radialGradient> </defs> <circle cx="120" cy="120" r="119" fill="url(#cbg)" stroke="#ffffff18" stroke-width="2"/> ${ticks} ${labels} <g id="compass-arrow" style="transform-origin:120px 120px;transform-box:fill-box;"> <polygon id="arr-n" points="120,88 132,120 120,112 108,120" fill="#e8334a"/> <polygon points="120,152 132,120 120,128 108,120" fill="#ffffff33"/> <circle cx="120" cy="120" r="7" fill="#0f3460" stroke="#e8334a" stroke-width="2" id="arr-dot"/> </g> </svg>`;
 }
 
 function tmplHunt(){
-  if(S.found){
-    return `
-    <div class="gap fade-in" style="align-items:center;text-align:center;">
-      <div style="font-size:64px;animation:bounce .8s ease infinite alternate;">🏆</div>
-      <div class="cinzel" style="font-size:28px;color:#e8c84a;line-height:1.3;">TREASURE<br/>FOUND!</div>
-      <div style="color:#ffffff88;font-size:15px;">${esc(S.hunt.name)}</div>
-      <svg width="240" height="240" viewBox="0 0 240 240" style="display:block;margin:0 auto;">
-        <circle cx="120" cy="120" r="119" fill="#0f3460" stroke="#ffd70066" stroke-width="4"
-          style="animation:pulseGlow 1.5s ease infinite;"/>
-        <text x="120" y="128" text-anchor="middle" font-size="72">🏆</text>
-      </svg>
-      <button class="btn-ghost" onclick="leaveHunt()">← Leave hunt</button>
-    </div>`;
-  }
-  return `
+if(S.found){
+return ` <div class="gap fade-in" style="align-items:center;text-align:center;"> <div style="font-size:64px;animation:bounce .8s ease infinite alternate;">🏆</div> <div class="cinzel" style="font-size:28px;color:#e8c84a;line-height:1.3;">TREASURE<br/>FOUND!</div> <div style="color:#ffffff88;font-size:15px;">${esc(S.hunt.name)}</div> <svg width="240" height="240" viewBox="0 0 240 240" style="display:block;margin:0 auto;"> <circle cx="120" cy="120" r="119" fill="#0f3460" stroke="#ffd70066" stroke-width="4" style="animation:pulseGlow 1.5s ease infinite;"/> <text x="120" y="128" text-anchor="middle" font-size="72">🏆</text> </svg> <button class="btn-ghost" onclick="leaveHunt()">← Leave hunt</button> </div>`;
+}
+return `
+
   <div class="gap fade-in" style="align-items:center;">
     <div style="text-align:center;">
       <div class="cinzel" style="font-size:16px;color:#e8c84a;letter-spacing:3px;">HUNTING</div>
@@ -264,209 +243,240 @@ function tmplHunt(){
       <div style="color:#ffffff55;font-size:12px;line-height:1.6;">No distance. No location.<br/>Just a direction. Go find it.</div>
     </div>
     <button style="background:transparent;border:1px solid #ffffff1a;border-radius:10px;color:#ffffff33;padding:10px;font-size:13px;width:100%;" onclick="leaveHunt()">← Leave hunt</button>
+    <div id="hunt-debug" style="background:#ffffff08;border-radius:8px;padding:10px;font-size:11px;font-family:monospace;color:#ffffff55;line-height:1.8;"></div>
   </div>`;
 }
 
 // ── Hunt display updater (no full re-render) ─────────────────────────────────
 function updateCompass(){
-  if(S.found){ render(); return; }
-  const arrow = document.getElementById('compass-arrow');
-  const status = document.getElementById('hunt-status');
-  if(!arrow || !status) return;
+if(S.found){ render(); return; }
+const arrow = document.getElementById(‘compass-arrow’);
+const status = document.getElementById(‘hunt-status’);
+const dbg = document.getElementById(‘hunt-debug’);
+if(!arrow || !status) return;
 
-  if(!S.userPos){
-    arrow.style.animation = 'spin 3s linear infinite';
-    arrow.style.transform = '';
-  } else {
-    arrow.style.animation = 'none';
-    arrow.style.transform = `rotate(${S.rawBearing}deg)`;
-    status.innerHTML = `
-      <div style="color:#ffffff22;font-size:11px;letter-spacing:3px;margin-bottom:4px;">THE TREASURE LIES</div>
-      <div class="cinzel" style="font-size:36px;font-weight:700;letter-spacing:2px;">${Math.round(S.rawBearing)}°</div>
-      <div style="color:#ffffff44;font-size:12px;margin-top:4px;letter-spacing:2px;">${cardinal(S.rawBearing)}</div>`;
-  }
+if(!S.userPos){
+arrow.style.transition = ‘none’;
+arrow.style.transform = ‘rotate(0deg)’;
+arrow.style.animation = ‘spin 3s linear infinite’;
+} else {
+arrow.style.animation = ‘none’;
+arrow.style.transition = ‘transform 0.4s cubic-bezier(0.34,1.56,0.64,1)’;
+arrow.style.transform = `rotate(${S.displayBearing}deg)`;
+status.innerHTML = ` <div style="color:#ffffff22;font-size:11px;letter-spacing:3px;margin-bottom:4px;">THE TREASURE LIES</div> <div class="cinzel" style="font-size:36px;font-weight:700;letter-spacing:2px;">${Math.round(S.displayBearing)}°</div> <div style="color:#ffffff44;font-size:12px;margin-top:4px;letter-spacing:2px;">${cardinal(S.displayBearing)}</div>`;
+}
+
+// Debug panel — shows raw values so we can see what’s happening
+if(dbg){
+dbg.innerHTML = ` <div>GPS: ${S.userPos ? S.userPos.lat.toFixed(4)+', '+S.userPos.lon.toFixed(4) : 'waiting…'}</div> <div>Bearing to treasure: ${S.gpsBearing != null ? Math.round(S.gpsBearing)+'°' : '—'}</div> <div>Compass heading: ${S.heading != null ? Math.round(S.heading)+'°' : 'not available'}</div> <div>Display bearing: ${S.displayBearing != null ? Math.round(S.displayBearing)+'°' : '—'}</div>`;
+}
 }
 
 // ── Navigation ───────────────────────────────────────────────────────────────
 function goScreen(screen){
-  stopHunt();
-  destroyMap();
-  S.screen = screen;
-  render();
+stopHunt();
+destroyMap();
+S.screen = screen;
+render();
 }
 
 // ── Map ──────────────────────────────────────────────────────────────────────
 function initMap(){
-  if(S.pickMap){ S.pickMap.remove(); S.pickMap = null; S.pickMarker = null; }
-  const el = document.getElementById('map-picker');
-  if(!el) return;
+if(S.pickMap){ S.pickMap.remove(); S.pickMap = null; S.pickMarker = null; }
+const el = document.getElementById(‘map-picker’);
+if(!el) return;
 
-  S.pickMap = L.map('map-picker', {zoomControl:true, attributionControl:false}).setView([20,0], 2);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    {maxZoom:19, subdomains:'abcd'}).addTo(S.pickMap);
+S.pickMap = L.map(‘map-picker’, {zoomControl:true, attributionControl:false}).setView([20,0], 2);
+L.tileLayer(‘https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png’,
+{maxZoom:19, subdomains:‘abcd’}).addTo(S.pickMap);
 
-  const icon = L.divIcon({
-    className:'',
-    html:`<div style="width:26px;height:26px;background:linear-gradient(135deg,#e8334a,#c0392b);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px #0008;"></div>`,
-    iconSize:[26,26], iconAnchor:[13,26]
-  });
+const icon = L.divIcon({
+className:’’,
+html:`<div style="width:26px;height:26px;background:linear-gradient(135deg,#e8334a,#c0392b);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px #0008;"></div>`,
+iconSize:[26,26], iconAnchor:[13,26]
+});
 
-  S.pickMap.on('click', e => {
-    S.pickedLat = e.latlng.lat;
-    S.pickedLon = e.latlng.lng;
-    if(S.pickMarker) S.pickMarker.setLatLng(e.latlng);
-    else S.pickMarker = L.marker(e.latlng, {icon}).addTo(S.pickMap);
-    const confirm = document.getElementById('map-confirm');
-    const coords = document.getElementById('map-coord-text');
-    const btn = document.getElementById('hidebtn');
-    if(confirm) confirm.style.display = 'block';
-    if(coords) coords.textContent = `${S.pickedLat.toFixed(4)}, ${S.pickedLon.toFixed(4)}`;
-    if(btn) btn.disabled = false;
-  });
+S.pickMap.on(‘click’, e => {
+S.pickedLat = e.latlng.lat;
+S.pickedLon = e.latlng.lng;
+if(S.pickMarker) S.pickMarker.setLatLng(e.latlng);
+else S.pickMarker = L.marker(e.latlng, {icon}).addTo(S.pickMap);
+const confirm = document.getElementById(‘map-confirm’);
+const coords = document.getElementById(‘map-coord-text’);
+const btn = document.getElementById(‘hidebtn’);
+if(confirm) confirm.style.display = ‘block’;
+if(coords) coords.textContent = `${S.pickedLat.toFixed(4)}, ${S.pickedLon.toFixed(4)}`;
+if(btn) btn.disabled = false;
+});
 }
 
 function destroyMap(){
-  if(S.pickMap){ S.pickMap.remove(); S.pickMap = null; S.pickMarker = null; }
-  S.pickedLat = null; S.pickedLon = null;
+if(S.pickMap){ S.pickMap.remove(); S.pickMap = null; S.pickMarker = null; }
+S.pickedLat = null; S.pickedLon = null;
 }
 
 function jumpToMyLocation(){
-  const btn = document.getElementById('locbtn');
-  const err = document.getElementById('hide-err');
-  if(!navigator.geolocation){
-    showErr('hide-err','⚠️ GPS not available — tap the map to pick a spot.'); return;
-  }
-  if(btn){ btn.textContent = '📡 Getting location…'; btn.disabled = true; }
-  navigator.geolocation.getCurrentPosition(
-    p => {
-      if(btn){ btn.textContent = '🎯 Jump to my current location'; btn.disabled = false; }
-      if(err) err.classList.add('hidden');
-      if(S.pickMap){
-        S.pickMap.setView([p.coords.latitude, p.coords.longitude], 15);
-        S.pickMap.fire('click', {latlng: L.latLng(p.coords.latitude, p.coords.longitude)});
-      }
-    },
-    () => {
-      if(btn){ btn.textContent = '🎯 Jump to my current location'; btn.disabled = false; }
-      showErr('hide-err','⚠️ Location blocked — tap the map to pick a spot instead.');
-    },
-    {enableHighAccuracy:true, timeout:10000}
-  );
+const btn = document.getElementById(‘locbtn’);
+const err = document.getElementById(‘hide-err’);
+if(!navigator.geolocation){
+showErr(‘hide-err’,‘⚠️ GPS not available — tap the map to pick a spot.’); return;
+}
+if(btn){ btn.textContent = ‘📡 Getting location…’; btn.disabled = true; }
+navigator.geolocation.getCurrentPosition(
+p => {
+if(btn){ btn.textContent = ‘🎯 Jump to my current location’; btn.disabled = false; }
+if(err) err.classList.add(‘hidden’);
+if(S.pickMap){
+S.pickMap.setView([p.coords.latitude, p.coords.longitude], 15);
+S.pickMap.fire(‘click’, {latlng: L.latLng(p.coords.latitude, p.coords.longitude)});
+}
+},
+() => {
+if(btn){ btn.textContent = ‘🎯 Jump to my current location’; btn.disabled = false; }
+showErr(‘hide-err’,‘⚠️ Location blocked — tap the map to pick a spot instead.’);
+},
+{enableHighAccuracy:true, timeout:10000}
+);
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 function doHide(){
-  if(S.pickedLat === null){
-    showErr('hide-err','⚠️ Tap the map to choose a treasure location first.');
-    return;
-  }
-  const name = (document.getElementById('tname') || {}).value || 'Hidden Treasure';
-  const code = encode(S.pickedLat, S.pickedLon, name);
-  destroyMap();
-  S.shareCode = code;
-  S.shareName = name;
-  S.screen = 'share';
-  render();
+if(S.pickedLat === null){
+showErr(‘hide-err’,‘⚠️ Tap the map to choose a treasure location first.’);
+return;
+}
+const name = (document.getElementById(‘tname’) || {}).value || ‘Hidden Treasure’;
+const code = encode(S.pickedLat, S.pickedLon, name);
+destroyMap();
+S.shareCode = code;
+S.shareName = name;
+S.screen = ‘share’;
+render();
 }
 
 function doJoin(){
-  const raw = (document.getElementById('huntcode') || {}).value || '';
-  const hunt = decode(raw);
-  if(!hunt){ showErr('join-err','⚠️ Invalid code — check it and try again.'); return; }
-  startHunt(hunt);
+const raw = (document.getElementById(‘huntcode’) || {}).value || ‘’;
+const hunt = decode(raw);
+if(!hunt){ showErr(‘join-err’,‘⚠️ Invalid code — check it and try again.’); return; }
+startHunt(hunt);
 }
 
 function copyLink(url){
-  const btn = document.getElementById('copybtn');
-  const ok = () => {
-    if(btn){ btn.textContent='✓ COPIED!'; btn.style.background='linear-gradient(135deg,#27ae60,#1e8449)'; }
-    setTimeout(() => { if(btn){ btn.textContent='COPY LINK TO SHARE'; btn.style.background=''; }}, 2500);
-  };
-  if(navigator.clipboard) navigator.clipboard.writeText(url).then(ok).catch(() => clipFallback(url, ok));
-  else clipFallback(url, ok);
+const btn = document.getElementById(‘copybtn’);
+const ok = () => {
+if(btn){ btn.textContent=‘✓ COPIED!’; btn.style.background=‘linear-gradient(135deg,#27ae60,#1e8449)’; }
+setTimeout(() => { if(btn){ btn.textContent=‘COPY LINK TO SHARE’; btn.style.background=’’; }}, 2500);
+};
+if(navigator.clipboard) navigator.clipboard.writeText(url).then(ok).catch(() => clipFallback(url, ok));
+else clipFallback(url, ok);
 }
 
 function clipFallback(text, cb){
-  const el = document.createElement('textarea');
-  el.value = text; el.style.cssText = 'position:fixed;opacity:0;';
-  document.body.appendChild(el); el.focus(); el.select();
-  try{ document.execCommand('copy'); cb(); }catch(e){}
-  document.body.removeChild(el);
+const el = document.createElement(‘textarea’);
+el.value = text; el.style.cssText = ‘position:fixed;opacity:0;’;
+document.body.appendChild(el); el.focus(); el.select();
+try{ document.execCommand(‘copy’); cb(); }catch(e){}
+document.body.removeChild(el);
 }
 
 // ── Hunt engine ──────────────────────────────────────────────────────────────
 function startHunt(hunt){
-  stopHunt();
-  S.hunt = hunt; S.found = false; S.userPos = null; S.rawBearing = null; S.heading = null;
-  S.screen = 'hunt';
-  render();
+stopHunt();
+S.hunt = hunt; S.found = false; S.userPos = null;
+S.gpsBearing = null; S.displayBearing = null; S.heading = null;
+S.screen = ‘hunt’;
+render();
 
-  if(!navigator.geolocation) return;
+if(!navigator.geolocation) return;
 
-  // Orientation
-  function onOrient(e){
-    const h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (360 - (e.alpha || 0));
-    S.heading = h;
-  }
-  if(typeof DeviceOrientationEvent !== 'undefined' &&
-     typeof DeviceOrientationEvent.requestPermission === 'function'){
-    DeviceOrientationEvent.requestPermission()
-      .then(r => { if(r==='granted'){ window.addEventListener('deviceorientation', onOrient, true); S.orientHandler = onOrient; }})
-      .catch(()=>{});
-  } else {
-    window.addEventListener('deviceorientation', onOrient, true);
-    S.orientHandler = onOrient;
-  }
+// Device orientation — gives us the phone’s compass heading
+function onOrient(e){
+// webkitCompassHeading is degrees clockwise from north (iOS)
+// alpha is degrees anticlockwise from north (Android) — we convert
+if(e.webkitCompassHeading != null && e.webkitCompassHeading !== 0){
+S.heading = e.webkitCompassHeading;
+} else if(e.alpha != null){
+S.heading = (360 - e.alpha) % 360;
+}
+// Recalculate display bearing whenever heading updates
+if(S.gpsBearing != null && S.heading != null){
+S.displayBearing = (S.gpsBearing - S.heading + 360) % 360;
+updateCompass();
+}
+}
 
-  // GPS watch
-  S.watchId = navigator.geolocation.watchPosition(
-    p => {
-      const here = {lat: p.coords.latitude, lon: p.coords.longitude};
-      const there = {lat: hunt.lat, lon: hunt.lon};
-      const raw = bearing(here, there);
-      const dist = distance(here, there);
-      S.userPos = here;
-      S.rawBearing = S.heading != null ? (raw - S.heading + 360) % 360 : raw;
-      if(dist <= FOUND_M && !S.found) S.found = true;
-      updateCompass();
-    },
-    () => {},
-    {enableHighAccuracy:true, maximumAge:2000, timeout:15000}
-  );
+if(typeof DeviceOrientationEvent !== ‘undefined’ &&
+typeof DeviceOrientationEvent.requestPermission === ‘function’){
+// iOS 13+ needs a user gesture to get compass
+DeviceOrientationEvent.requestPermission()
+.then(r => {
+if(r === ‘granted’){
+window.addEventListener(‘deviceorientation’, onOrient, true);
+S.orientHandler = onOrient;
+}
+}).catch(()=>{});
+} else {
+window.addEventListener(‘deviceorientation’, onOrient, true);
+S.orientHandler = onOrient;
+}
+
+// GPS watch — tells us direction TO the treasure (true north bearing)
+S.watchId = navigator.geolocation.watchPosition(
+p => {
+const here = {lat: p.coords.latitude, lon: p.coords.longitude};
+const there = {lat: hunt.lat, lon: hunt.lon};
+S.userPos = here;
+S.gpsBearing = bearing(here, there);
+// If we have compass heading, show screen-relative direction
+// If not, show true north bearing (still useful!)
+S.displayBearing = S.heading != null
+? (S.gpsBearing - S.heading + 360) % 360
+: S.gpsBearing;
+const dist = distance(here, there);
+if(dist <= FOUND_M && !S.found) S.found = true;
+updateCompass();
+},
+err => {
+const dbg = document.getElementById(‘hunt-debug’);
+if(dbg) dbg.innerHTML += `<div style="color:#ff8a8a">GPS error: ${err.message}</div>`;
+},
+{enableHighAccuracy:true, maximumAge:2000, timeout:15000}
+);
 }
 
 function stopHunt(){
-  if(S.watchId){ navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
-  if(S.orientHandler){ window.removeEventListener('deviceorientation', S.orientHandler, true); S.orientHandler = null; }
+if(S.watchId){ navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
+if(S.orientHandler){ window.removeEventListener(‘deviceorientation’, S.orientHandler, true); S.orientHandler = null; }
 }
 
 function leaveHunt(){
-  stopHunt();
-  S.hunt = null; S.found = false; S.userPos = null; S.rawBearing = null;
-  S.screen = 'home';
-  render();
+stopHunt();
+S.hunt = null; S.found = false; S.userPos = null; S.rawBearing = null;
+S.screen = ‘home’;
+render();
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────
 function showErr(id, msg){
-  const el = document.getElementById(id);
-  if(el){ el.textContent = msg; el.classList.remove('hidden'); }
+const el = document.getElementById(id);
+if(el){ el.textContent = msg; el.classList.remove(‘hidden’); }
 }
 
 function esc(s){
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+return String(s || ‘’).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/g,’>’).replace(/”/g,’"’);
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
-window.addEventListener('load', () => {
-  const p = new URLSearchParams(window.location.search);
-  const code = p.get('hunt');
-  if(code){
-    const hunt = decode(code);
-    if(hunt){ startHunt(hunt); return; }
-  }
-  render();
+window.addEventListener(‘load’, () => {
+const p = new URLSearchParams(window.location.search);
+const code = p.get(‘hunt’);
+if(code){
+const hunt = decode(code);
+if(hunt){ startHunt(hunt); return; }
+}
+render();
 });
 </script>
+
 </body>
 </html>
