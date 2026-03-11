@@ -242,9 +242,9 @@ function compassSVG(){
     ${ticks}
     ${labels}
     <g id="compass-arrow" style="transform-origin:120px 120px;transform-box:fill-box;">
-      <polygon id="arr-n" points="120,88 132,120 120,112 108,120" fill="#e8334a"/>
-      <polygon points="120,152 132,120 120,128 108,120" fill="#ffffff33"/>
-      <circle cx="120" cy="120" r="7" fill="#0f3460" stroke="#e8334a" stroke-width="2" id="arr-dot"/>
+      <polygon points="120,20 134,110 120,100 106,110" fill="#e8334a" stroke="#e8334a" stroke-width="1"/>
+      <polygon points="120,220 134,130 120,140 106,130" fill="#ffffff55" stroke="#ffffff33" stroke-width="1"/>
+      <circle cx="120" cy="120" r="10" fill="#0f3460" stroke="#e8334a" stroke-width="3" id="arr-dot"/>
     </g>
   </svg>`;
 }
@@ -271,6 +271,12 @@ function tmplHunt(){
       <div style="color:#ffffff88;font-size:13px;margin-top:4px;">${esc(S.hunt.name)}</div>
     </div>
     ${compassSVG()}
+    <div id="compass-btn-wrap" style="display:none;text-align:center;">
+      <button class="btn-red" style="font-size:14px;padding:12px 24px;width:auto;" onclick="requestCompass()">
+        🧭 Enable Compass
+      </button>
+      <div style="color:#ffffff44;font-size:11px;margin-top:6px;">Tap to point toward the treasure</div>
+    </div>
     <div id="hunt-status" style="text-align:center;">
       <div style="color:#ffffff44;font-size:13px;">Acquiring your location…</div>
     </div>
@@ -423,6 +429,37 @@ function clipFallback(text, cb){
 }
 
 // ── Hunt engine ──────────────────────────────────────────────────────────────
+function attachOrientation(){
+  function onOrient(e){
+    if(e.webkitCompassHeading != null && e.webkitCompassHeading !== 0){
+      S.heading = e.webkitCompassHeading;  // iOS — degrees clockwise from north
+    } else if(e.alpha != null){
+      S.heading = (360 - e.alpha) % 360;   // Android — convert anticlockwise to clockwise
+    }
+    // Hide the enable button once we have data
+    const btn = document.getElementById('compass-btn-wrap');
+    if(btn && S.heading != null) btn.style.display = 'none';
+    // Recalc display bearing
+    if(S.gpsBearing != null){
+      S.displayBearing = (S.gpsBearing - S.heading + 360) % 360;
+      updateCompass();
+    }
+  }
+  window.addEventListener('deviceorientation', onOrient, true);
+  S.orientHandler = onOrient;
+}
+
+function requestCompass(){
+  if(typeof DeviceOrientationEvent !== 'undefined' &&
+     typeof DeviceOrientationEvent.requestPermission === 'function'){
+    DeviceOrientationEvent.requestPermission()
+      .then(r => { if(r === 'granted') attachOrientation(); })
+      .catch(()=>{});
+  } else {
+    attachOrientation();
+  }
+}
+
 function startHunt(hunt){
   stopHunt();
   S.hunt = hunt; S.found = false; S.userPos = null;
@@ -432,51 +469,29 @@ function startHunt(hunt){
 
   if(!navigator.geolocation) return;
 
-  // Device orientation — gives us the phone's compass heading
-  function onOrient(e){
-    // webkitCompassHeading is degrees clockwise from north (iOS)
-    // alpha is degrees anticlockwise from north (Android) — we convert
-    if(e.webkitCompassHeading != null && e.webkitCompassHeading !== 0){
-      S.heading = e.webkitCompassHeading;
-    } else if(e.alpha != null){
-      S.heading = (360 - e.alpha) % 360;
-    }
-    // Recalculate display bearing whenever heading updates
-    if(S.gpsBearing != null && S.heading != null){
-      S.displayBearing = (S.gpsBearing - S.heading + 360) % 360;
-      updateCompass();
-    }
-  }
-
+  // iOS 13+ needs user gesture for compass — show button
+  // Android / others attach immediately
   if(typeof DeviceOrientationEvent !== 'undefined' &&
      typeof DeviceOrientationEvent.requestPermission === 'function'){
-    // iOS 13+ needs a user gesture to get compass
-    DeviceOrientationEvent.requestPermission()
-      .then(r => {
-        if(r === 'granted'){
-          window.addEventListener('deviceorientation', onOrient, true);
-          S.orientHandler = onOrient;
-        }
-      }).catch(()=>{});
+    // iOS — show the Enable Compass button
+    const btn = document.getElementById('compass-btn-wrap');
+    if(btn) btn.style.display = 'block';
   } else {
-    window.addEventListener('deviceorientation', onOrient, true);
-    S.orientHandler = onOrient;
+    // Android / desktop — attach straight away
+    attachOrientation();
   }
 
-  // GPS watch — tells us direction TO the treasure (true north bearing)
+  // GPS watch
   S.watchId = navigator.geolocation.watchPosition(
     p => {
       const here = {lat: p.coords.latitude, lon: p.coords.longitude};
       const there = {lat: hunt.lat, lon: hunt.lon};
       S.userPos = here;
       S.gpsBearing = bearing(here, there);
-      // If we have compass heading, show screen-relative direction
-      // If not, show true north bearing (still useful!)
       S.displayBearing = S.heading != null
         ? (S.gpsBearing - S.heading + 360) % 360
         : S.gpsBearing;
-      const dist = distance(here, there);
-      if(dist <= FOUND_M && !S.found) S.found = true;
+      if(distance(here, there) <= FOUND_M && !S.found) S.found = true;
       updateCompass();
     },
     err => {
