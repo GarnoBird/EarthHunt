@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Earth Hunt 🧭</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  min-height:100vh;
+  background:#0a0a18;
+  background-image:radial-gradient(ellipse at 20% 50%,#1a0a2e44 0%,transparent 60%),
+                   radial-gradient(ellipse at 80% 20%,#0f3460 0%,transparent 50%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px 16px;font-family:'DM Sans',sans-serif;color:#fff;
+}
+.card{
+  background:linear-gradient(160deg,#1a1a2e 0%,#16213e 100%);
+  border-radius:24px;padding:28px 24px;
+  border:1px solid #ffffff12;box-shadow:0 20px 60px #00000066;
+  max-width:420px;width:100%;
+}
+.cinzel{font-family:'Cinzel',serif;}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;}
+input,textarea,select{font-family:'DM Sans',sans-serif;}
+.inp{background:#ffffff0d;border:1px solid #ffffff22;border-radius:10px;color:#fff;padding:12px 16px;font-size:15px;width:100%;outline:none;}
+.inp::placeholder{color:#ffffff44;}
+select.inp option{background:#16213e;color:#fff;}
+.btn-red{background:linear-gradient(135deg,#e8334a,#c0392b);border-radius:12px;color:#fff;padding:16px;font-size:16px;font-weight:700;width:100%;box-shadow:0 4px 20px #e8334a44;letter-spacing:1px;border:none;transition:opacity .2s;}
+.btn-red:disabled{opacity:.4;cursor:default;}
+.btn-ghost{background:#ffffff0d;border:1px solid #ffffff22;border-radius:10px;color:#fff;padding:12px 16px;font-size:14px;width:100%;}
+.gap{display:flex;flex-direction:column;gap:14px;}
+.err{background:#e8334a18;border:1px solid #e8334a55;border-radius:10px;padding:12px 14px;color:#ff8a8a;font-size:13px;line-height:1.5;}
+.hidden{display:none;}
+.section-label{color:#ffffff44;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;}
+#map-picker{width:100%;height:240px;border-radius:14px;border:2px solid #ffffff22;overflow:hidden;cursor:crosshair;}
+.leaflet-container{background:#0f1923;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:#ffffff0d;border:1px solid #ffffff22;border-radius:10px;padding:12px 16px;}
+.toggle-label{font-size:14px;color:#fff;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#ffffff22;border-radius:24px;transition:.3s;cursor:pointer;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;}
+.toggle input:checked+.toggle-slider{background:#e8334a;}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px);}
+/* Leaderboard */
+.leader-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:#ffffff08;margin-bottom:6px;}
+.leader-rank{font-family:'Cinzel',serif;font-size:13px;color:#e8c84a;width:20px;text-align:center;}
+.leader-name{flex:1;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.leader-dist{font-size:12px;color:#ffffff66;font-family:monospace;}
+.leader-me{background:#e8334a18;border:1px solid #e8334a33;}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+@keyframes pulseGlow{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .35s ease forwards;}
+</style>
+</head>
+<body>
+<div class="card" id="app"></div>
+<script>
+// ── Error catcher ─────────────────────────────────────────────────────────────
+window.onerror = function(msg,src,line,col,err){
+  const app=document.getElementById('app');
+  if(app) app.innerHTML=`<div style="color:#ff8a8a;font-family:monospace;font-size:12px;line-height:1.8;padding:8px;">
+    <div style="font-size:16px;margin-bottom:12px;">⚠️ Error</div>
+    <div>${msg}</div><div>Line ${line}</div><div>${err?err.stack:''}</div></div>`;
+  return false;
+};
+
+// ── Firebase config — REPLACE with your own from console.firebase.google.com ─
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCYwNHGRO4yRnYQpeUyWxr60CQVITSvO1s",
+  authDomain: "earthhunt-389c2.firebaseapp.com",
+  databaseURL: "https://earthhunt-389c2-default-rtdb.firebaseio.com",
+  projectId: "earthhunt-389c2",
+  storageBucket: "earthhunt-389c2.firebasestorage.app",
+  messagingSenderId: "297322022675",
+  appId: "1:297322022675:web:40e53c39909f63c5777ce6"
+};
+
+let db = null;
+let fbReady = false;
+try {
+  if(FIREBASE_CONFIG.apiKey !== 'REPLACE_API_KEY'){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    fbReady = true;
+  }
+} catch(e){ console.warn('Firebase not configured:', e.message); }
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const EARTH_R = 6371000;
+
+// ── Math helpers ──────────────────────────────────────────────────────────────
+function toRad(d){ return d*Math.PI/180; }
+function toDeg(r){ return r*180/Math.PI; }
+function calcBearing(from,to){
+  const dLon=toRad(to.lon-from.lon), la1=toRad(from.lat), la2=toRad(to.lat);
+  const y=Math.sin(dLon)*Math.cos(la2);
+  const x=Math.cos(la1)*Math.sin(la2)-Math.sin(la1)*Math.cos(la2)*Math.cos(dLon);
+  return(toDeg(Math.atan2(y,x))+360)%360;
+}
+function calcDistance(from,to){
+  const dLat=toRad(to.lat-from.lat),dLon=toRad(to.lon-from.lon);
+  const a=Math.sin(dLat/2)**2+Math.cos(toRad(from.lat))*Math.cos(toRad(to.lat))*Math.sin(dLon/2)**2;
+  return EARTH_R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function cardinal(d){ return["N","NE","E","SE","S","SW","W","NW"][Math.round(d/45)%8]; }
+function fmtDist(meters, unit){
+  if(unit==='ft') return Math.round(meters*3.28084)+'ft';
+  if(unit==='m')  return Math.round(meters)+'m';
+  // both — show ft if small, km/mi if large
+  const ft = Math.round(meters*3.28084);
+  if(ft < 1000) return ft+'ft / '+Math.round(meters)+'m';
+  return (meters/1609.34).toFixed(1)+'mi / '+(meters/1000).toFixed(1)+'km';
+}
+
+// ── Encode / Decode ───────────────────────────────────────────────────────────
+function encode(obj){
+  return btoa(JSON.stringify(obj)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+}
+function decode(code){
+  try{
+    const b64=code.trim().replace(/-/g,'+').replace(/_/g,'/');
+    const pad=(4-b64.length%4)%4;
+    const obj=JSON.parse(atob(b64+'='.repeat(pad)));
+    if(typeof obj.lat==='number'&&typeof obj.lon==='number') return obj;
+  }catch(e){}
+  return null;
+}
+
+// ── App State ─────────────────────────────────────────────────────────────────
+const S = {
+  screen: 'home',
+  // hide options
+  hunt: null,
+  shareCode: null,
+  // runtime
+  watchId: null, orientHandler: null, spinInterval: null,
+  gpsBearing: null, displayBearing: null, heading: null,
+  userPos: null, found: false,
+  playerName: null, playerId: null,
+  leaderRef: null, leaderUnsub: null, leaders: [],
+  // map
+  pickMap: null, pickMarker: null, pickedLat: null, pickedLon: null,
+};
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){
+  const app=document.getElementById('app');
+  if(!app) return;
+  switch(S.screen){
+    case 'home':  app.innerHTML=tmplHome(); break;
+    case 'hide':  app.innerHTML=tmplHide(); setTimeout(initMap,0); break;
+    case 'share': app.innerHTML=tmplShare(); break;
+    case 'join':  app.innerHTML=tmplJoin(); break;
+    case 'name':  app.innerHTML=tmplName(); break;
+    case 'hunt':  app.innerHTML=tmplHunt(); break;
+  }
+}
+
+// ── HOME ──────────────────────────────────────────────────────────────────────
+function tmplHome(){
+  return `
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-size:36px;margin-bottom:8px;">🧭</div>
+    <div class="cinzel" style="font-size:22px;letter-spacing:2px;">EARTH HUNT</div>
+    <div style="color:#ffffff44;font-size:12px;letter-spacing:3px;margin-top:4px;">GLOBAL TREASURE HUNT</div>
+  </div>
+  <div class="gap">
+    <p style="color:#ffffff66;font-size:13px;text-align:center;line-height:1.7;">
+      Hide treasure anywhere on Earth. Hunters get only a compass direction —
+      no map, no distance. The fun is figuring out <em style="color:#ffffff99">how you're going to get there.</em>
+    </p>
+    <button class="btn-red" onclick="goScreen('hide')">🗺️ &nbsp;HIDE TREASURE</button>
+    <button class="btn-ghost" style="border-radius:14px;font-size:16px;font-weight:700;letter-spacing:1px;" onclick="goScreen('join')">🧭 &nbsp;JOIN A HUNT</button>
+  </div>`;
+}
+
+// ── HIDE ──────────────────────────────────────────────────────────────────────
+function tmplHide(){
+  return `
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+    <button class="btn-ghost" style="width:auto;padding:6px 10px;font-size:16px;border-radius:8px;" onclick="goScreen('home')">←</button>
+    <div class="cinzel" style="color:#e8c84a;font-size:15px;letter-spacing:2px;">HIDE TREASURE</div>
+  </div>
+  <div class="gap">
+    <input class="inp" id="tname" placeholder="Treasure name (optional)"/>
+
+    <div class="section-label">Treasure Location</div>
+    <div style="display:flex;gap:8px;">
+      <input class="inp" id="addr-input" placeholder="Search address or place…" style="flex:1;font-size:13px;"/>
+      <button onclick="searchAddress()" style="background:#e8334a;border:none;border-radius:10px;color:#fff;padding:0 14px;font-size:18px;cursor:pointer;">🔍</button>
+    </div>
+    <p style="color:#ffffff44;font-size:12px;line-height:1.5;margin:0;">or tap directly on the map ↓</p>
+    <div id="map-picker"></div>
+    <div id="map-confirm" style="display:none;background:#27ae6018;border:1px solid #27ae6044;border-radius:10px;padding:10px 14px;">
+      <span style="color:#7defa1;font-size:13px;font-weight:600;">📌 Treasure location set ✓</span>
+      <span id="map-coord-text" style="color:#ffffff44;font-size:11px;font-family:monospace;margin-left:8px;"></span>
+    </div>
+    <button id="locbtn" class="btn-ghost" onclick="jumpToMyLocation()" style="font-size:13px;">
+      🎯 Jump to my current location
+    </button>
+
+    <div class="section-label" style="margin-top:6px;">Hunt Options</div>
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select class="inp" id="opt-radius" style="flex:1;font-size:13px;">
+        <option value="5">Win radius: 5ft</option>
+        <option value="15">Win radius: 15ft</option>
+        <option value="30">Win radius: 30ft</option>
+        <option value="50" selected>Win radius: 50ft</option>
+        <option value="100">Win radius: 100ft</option>
+        <option value="200">Win radius: 200ft</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <input class="inp" id="opt-radius-custom" placeholder="Custom radius in feet" type="number" style="display:none;font-size:13px;"/>
+
+    <div style="display:flex;gap:8px;">
+      <select class="inp" id="opt-units" style="flex:1;font-size:13px;">
+        <option value="both" selected>Units: ft &amp; m</option>
+        <option value="ft">Units: feet only</option>
+        <option value="m">Units: meters only</option>
+      </select>
+    </div>
+
+    <label class="toggle-row">
+      <span class="toggle-label">📏 Show distance to hunters</span>
+      <span class="toggle"><input type="checkbox" id="opt-showdist"/><span class="toggle-slider"></span></span>
+    </label>
+
+    <label class="toggle-row">
+      <span class="toggle-label">🏆 Enable leaderboard</span>
+      <span class="toggle"><input type="checkbox" id="opt-leaderboard" ${fbReady?'':'disabled title="Configure Firebase first"'}/><span class="toggle-slider"></span></span>
+    </label>
+    ${!fbReady?`<div style="color:#ffffff44;font-size:11px;line-height:1.5;">ℹ️ Leaderboard requires Firebase setup. See instructions in the code.</div>`:''}
+
+    <input class="inp" id="opt-message" placeholder="🏆 Winner message (optional, with emoji!)" style="font-size:13px;"/>
+
+    <div id="hide-err" class="err hidden"></div>
+    <button id="hidebtn" class="btn-red" disabled onclick="doHide()">HIDE THE TREASURE →</button>
+  </div>`;
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────────────────
+function tmplShare(){
+  const url=window.location.origin+window.location.pathname+'?hunt='+S.shareCode;
+  return `
+  <div class="gap fade-in" style="align-items:center;text-align:center;">
+    <div style="font-size:48px;">🗺️</div>
+    <div>
+      <div class="cinzel" style="font-size:20px;color:#e8c84a;margin-bottom:6px;">Treasure Hidden!</div>
+      <div style="color:#ffffff88;font-size:14px;">${esc(S.hunt.name)}</div>
+    </div>
+    <div style="background:#ffffff0d;border:1px solid #ffffff22;border-radius:12px;padding:14px;width:100%;">
+      <div style="color:#ffffff44;font-size:11px;margin-bottom:8px;letter-spacing:2px;">HUNT CODE</div>
+      <div style="font-family:monospace;font-size:11px;color:#e8c84a;word-break:break-all;line-height:1.6;">${S.shareCode}</div>
+    </div>
+    <div style="background:#ffffff06;border:1px solid #ffffff11;border-radius:12px;padding:12px 14px;width:100%;">
+      <div style="color:#ffffff33;font-size:11px;margin-bottom:6px;letter-spacing:2px;">SHAREABLE LINK</div>
+      <div style="font-family:monospace;font-size:11px;color:#ffffff66;word-break:break-all;line-height:1.6;">${url}</div>
+    </div>
+    <button id="copybtn" class="btn-red" style="width:100%;" onclick="copyLink('${url}')">COPY LINK TO SHARE</button>
+    <button class="btn-ghost" onclick="goScreen('hide')">Hide another treasure</button>
+  </div>`;
+}
+
+// ── JOIN ──────────────────────────────────────────────────────────────────────
+function tmplJoin(){
+  return `
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
+    <button class="btn-ghost" style="width:auto;padding:6px 10px;font-size:16px;border-radius:8px;" onclick="goScreen('home')">←</button>
+    <div class="cinzel" style="color:#e8c84a;font-size:15px;letter-spacing:2px;">JOIN A HUNT</div>
+  </div>
+  <div class="gap">
+    <p style="color:#ffffff88;font-size:13px;line-height:1.6;">
+      Enter the hunt code shared by the Hider.
+    </p>
+    <textarea class="inp" id="huntcode" placeholder="Paste hunt code here…" rows="4"
+      style="resize:vertical;font-family:monospace;font-size:12px;color:#e8c84a;line-height:1.5;"></textarea>
+    <div id="join-err" class="err hidden"></div>
+    <button class="btn-red" onclick="doJoin()">NEXT →</button>
+  </div>`;
+}
+
+// ── NAME ENTRY ────────────────────────────────────────────────────────────────
+function tmplName(){
+  const needsName = S.hunt && S.hunt.leaderboard;
+  return `
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:32px;margin-bottom:8px;">🧭</div>
+    <div class="cinzel" style="font-size:18px;color:#e8c84a;">${esc(S.hunt.name)}</div>
+  </div>
+  <div class="gap">
+    <p style="color:#ffffff88;font-size:13px;line-height:1.6;text-align:center;">
+      ${needsName ? 'Enter your name to appear on the leaderboard.' : 'Ready to start hunting?'}
+    </p>
+    ${needsName ? `<input class="inp" id="player-name" placeholder="Your name" maxlength="20" style="text-align:center;font-size:16px;"/>` : ''}
+    <div id="name-err" class="err hidden"></div>
+    <button class="btn-red" onclick="doStartHunt()">START HUNTING →</button>
+  </div>`;
+}
+
+// ── HUNT ──────────────────────────────────────────────────────────────────────
+function compassSVG(){
+  const ticks=Array.from({length:36},(_,i)=>{
+    const a=i*10,r=toRad(a-90),big=a%90===0,med=a%45===0,len=big?14:med?9:5;
+    const x1=120+104*Math.cos(r),y1=120+104*Math.sin(r);
+    const x2=120+(104-len)*Math.cos(r),y2=120+(104-len)*Math.sin(r);
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${big?'#ffffff66':'#ffffff22'}" stroke-width="${big?2:1}"/>`;
+  }).join('');
+  const labels=[['N',0],['E',90],['S',180],['W',270]].map(([l,deg])=>{
+    const r=toRad(deg-90),x=120+98*Math.cos(r),y=120+98*Math.sin(r);
+    return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="Cinzel,serif" font-size="${l==='N'?13:11}" fill="${l==='N'?'#e8c84a':'#ffffff66'}" font-weight="${l==='N'?700:400}" letter-spacing="2">${l}</text>`;
+  }).join('');
+  return `<svg id="compass-svg" width="240" height="240" viewBox="0 0 240 240" style="display:block;margin:0 auto;">
+    <defs><radialGradient id="cbg" cx="50%" cy="50%"><stop offset="0%" stop-color="#0f3460"/><stop offset="100%" stop-color="#1a1a2e"/></radialGradient></defs>
+    <circle cx="120" cy="120" r="119" fill="url(#cbg)" stroke="#ffffff18" stroke-width="2"/>
+    ${ticks}${labels}
+    <g id="compass-arrow" transform="rotate(0,120,120)">
+      <polygon points="120,20 134,110 120,100 106,110" fill="#e8334a" stroke="#e8334a" stroke-width="1"/>
+      <polygon points="120,220 134,130 120,140 106,130" fill="#ffffff55" stroke="#ffffff33" stroke-width="1"/>
+      <circle cx="120" cy="120" r="10" fill="#0f3460" stroke="#e8334a" stroke-width="3"/>
+    </g>
+  </svg>`;
+}
+
+function tmplHunt(){
+  const h = S.hunt;
+  if(S.found){
+    return `
+    <div class="gap fade-in" style="align-items:center;text-align:center;">
+      <div style="font-size:64px;animation:bounce .8s ease infinite alternate;">🏆</div>
+      <div class="cinzel" style="font-size:28px;color:#e8c84a;line-height:1.3;">TREASURE<br/>FOUND!</div>
+      <div style="color:#ffffff88;font-size:15px;">${esc(h.name)}</div>
+      ${h.message?`<div style="background:#e8c84a18;border:1px solid #e8c84a44;border-radius:14px;padding:18px 20px;font-size:15px;line-height:1.6;color:#fff;text-align:center;margin:4px 0;">${esc(h.message)}</div>`:''}
+      <button class="btn-ghost" onclick="leaveHunt()" style="margin-top:8px;">← Leave hunt</button>
+    </div>`;
+  }
+
+  const leaderHtml = h.leaderboard ? `
+    <div id="leaderboard-section" style="width:100%;">
+      <div class="section-label" style="margin-bottom:8px;">🏆 LEADERBOARD</div>
+      <div id="leaderboard-rows">
+        <div style="color:#ffffff33;font-size:13px;text-align:center;padding:10px;">Waiting for players…</div>
+      </div>
+    </div>` : '';
+
+  return `
+  <div class="gap fade-in" style="align-items:center;">
+    <div style="text-align:center;">
+      <div class="cinzel" style="font-size:16px;color:#e8c84a;letter-spacing:3px;">HUNTING</div>
+      <div style="color:#ffffff88;font-size:13px;margin-top:4px;">${esc(h.name)}</div>
+    </div>
+    ${compassSVG()}
+    <div id="compass-btn-wrap" style="display:none;text-align:center;">
+      <button class="btn-red" style="font-size:14px;padding:12px 24px;width:auto;" onclick="requestCompass()">🧭 Enable Compass</button>
+      <div style="color:#ffffff44;font-size:11px;margin-top:6px;">Tap to point toward the treasure</div>
+    </div>
+    <div id="hunt-status" style="text-align:center;">
+      <div style="color:#ffffff44;font-size:13px;">Acquiring your location…</div>
+    </div>
+    ${h.showDist?`<div id="hunt-dist" style="text-align:center;color:#ffffff55;font-size:13px;"></div>`:''}
+    <div style="background:#ffffff08;border:1px solid #ffffff11;border-radius:12px;padding:10px 20px;text-align:center;">
+      <div style="color:#ffffff33;font-size:10px;letter-spacing:3px;margin-bottom:2px;">REMEMBER</div>
+      <div style="color:#ffffff55;font-size:12px;line-height:1.6;">No map. No location.<br/>Just a direction. Go find it.</div>
+    </div>
+    ${leaderHtml}
+    <button style="background:transparent;border:1px solid #ffffff1a;border-radius:10px;color:#ffffff33;padding:10px;font-size:13px;width:100%;" onclick="leaveHunt()">← Leave hunt</button>
+  </div>`;
+}
+
+// ── updateCompass ─────────────────────────────────────────────────────────────
+function updateCompass(){
+  if(S.found){ render(); return; }
+  const arrow=document.getElementById('compass-arrow');
+  const status=document.getElementById('hunt-status');
+  const distEl=document.getElementById('hunt-dist');
+  if(!arrow||!status) return;
+
+  if(!S.userPos){
+    if(!S.spinInterval){
+      let deg=0;
+      S.spinInterval=setInterval(()=>{
+        deg=(deg+3)%360;
+        const a=document.getElementById('compass-arrow');
+        if(a) a.setAttribute('transform',`rotate(${deg},120,120)`);
+        else{ clearInterval(S.spinInterval); S.spinInterval=null; }
+      },16);
+    }
+  } else {
+    if(S.spinInterval){ clearInterval(S.spinInterval); S.spinInterval=null; }
+    arrow.setAttribute('transform',`rotate(${S.displayBearing},120,120)`);
+    status.innerHTML=`
+      <div style="color:#ffffff22;font-size:11px;letter-spacing:3px;margin-bottom:4px;">THE TREASURE LIES</div>
+      <div class="cinzel" style="font-size:36px;font-weight:700;letter-spacing:2px;">${Math.round(S.displayBearing)}°</div>
+      <div style="color:#ffffff44;font-size:12px;margin-top:4px;letter-spacing:2px;">${cardinal(S.displayBearing)}</div>`;
+    if(distEl && S.currentDist != null){
+      distEl.textContent='Distance: '+fmtDist(S.currentDist, S.hunt.units);
+    }
+  }
+}
+
+// ── Map ───────────────────────────────────────────────────────────────────────
+function initMap(){
+  if(S.pickMap){ S.pickMap.remove(); S.pickMap=null; S.pickMarker=null; }
+  const el=document.getElementById('map-picker');
+  if(!el) return;
+  // Start on North America
+  S.pickMap=L.map('map-picker',{zoomControl:true,attributionControl:false}).setView([39.5,-98.35],3);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(S.pickMap);
+  const icon=L.divIcon({
+    className:'',
+    html:`<div style="width:26px;height:26px;background:linear-gradient(135deg,#e8334a,#c0392b);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px #0008;"></div>`,
+    iconSize:[26,26],iconAnchor:[13,26]
+  });
+  S.pickMap.on('click',e=>{
+    S.pickedLat=e.latlng.lat; S.pickedLon=e.latlng.lng;
+    if(S.pickMarker) S.pickMarker.setLatLng(e.latlng);
+    else S.pickMarker=L.marker(e.latlng,{icon}).addTo(S.pickMap);
+    const conf=document.getElementById('map-confirm');
+    const coords=document.getElementById('map-coord-text');
+    const btn=document.getElementById('hidebtn');
+    if(conf) conf.style.display='block';
+    if(coords) coords.textContent=`${S.pickedLat.toFixed(4)}, ${S.pickedLon.toFixed(4)}`;
+    if(btn) btn.disabled=false;
+  });
+
+  // Custom radius dropdown
+  document.getElementById('opt-radius').addEventListener('change',function(){
+    document.getElementById('opt-radius-custom').style.display=this.value==='custom'?'block':'none';
+  });
+}
+
+function destroyMap(){
+  if(S.pickMap){ S.pickMap.remove(); S.pickMap=null; S.pickMarker=null; }
+  S.pickedLat=null; S.pickedLon=null;
+}
+
+async function searchAddress(){
+  const q=document.getElementById('addr-input').value.trim();
+  if(!q) return;
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
+      {headers:{'Accept-Language':'en'}});
+    const data=await res.json();
+    if(data&&data[0]){
+      const lat=parseFloat(data[0].lat), lon=parseFloat(data[0].lon);
+      S.pickMap.setView([lat,lon],14);
+      S.pickMap.fire('click',{latlng:L.latLng(lat,lon)});
+    } else {
+      showErr('hide-err','⚠️ Address not found — try a different search.');
+    }
+  }catch(e){
+    showErr('hide-err','⚠️ Search failed — check your connection.');
+  }
+}
+
+function jumpToMyLocation(){
+  const btn=document.getElementById('locbtn');
+  if(!navigator.geolocation){ showErr('hide-err','⚠️ GPS not available.'); return; }
+  if(btn){ btn.textContent='📡 Getting location…'; btn.disabled=true; }
+  navigator.geolocation.getCurrentPosition(
+    p=>{
+      if(btn){ btn.textContent='🎯 Jump to my current location'; btn.disabled=false; }
+      if(S.pickMap){
+        S.pickMap.setView([p.coords.latitude,p.coords.longitude],15);
+        S.pickMap.fire('click',{latlng:L.latLng(p.coords.latitude,p.coords.longitude)});
+      }
+    },
+    ()=>{
+      if(btn){ btn.textContent='🎯 Jump to my current location'; btn.disabled=false; }
+      showErr('hide-err','⚠️ Location blocked — tap the map instead.');
+    },
+    {enableHighAccuracy:true,timeout:10000}
+  );
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function doHide(){
+  if(S.pickedLat===null){ showErr('hide-err','⚠️ Tap the map to choose a location first.'); return; }
+  const name=(document.getElementById('tname')||{}).value||'Hidden Treasure';
+  const message=(document.getElementById('opt-message')||{}).value||'';
+  const showDist=document.getElementById('opt-showdist').checked;
+  const leaderboard=document.getElementById('opt-leaderboard').checked;
+  const units=(document.getElementById('opt-units')||{}).value||'both';
+  const radSel=document.getElementById('opt-radius').value;
+  let radiusFt = radSel==='custom'
+    ? parseFloat(document.getElementById('opt-radius-custom').value)||50
+    : parseFloat(radSel);
+  const radiusM = radiusFt * 0.3048;
+
+  const hunt = {
+    lat:S.pickedLat, lon:S.pickedLon,
+    name, message, showDist, leaderboard, units, radiusM,
+    ts:Date.now()
+  };
+  const code=encode(hunt);
+  destroyMap();
+  S.hunt=hunt; S.shareCode=code;
+  S.screen='share'; render();
+}
+
+function doJoin(){
+  const raw=(document.getElementById('huntcode')||{}).value||'';
+  const hunt=decode(raw);
+  if(!hunt){ showErr('join-err','⚠️ Invalid code — check it and try again.'); return; }
+  S.hunt=hunt;
+  S.screen='name'; render();
+}
+
+function doStartHunt(){
+  const needsName=S.hunt&&S.hunt.leaderboard;
+  if(needsName){
+    const n=(document.getElementById('player-name')||{}).value.trim();
+    if(!n){ showErr('name-err','⚠️ Please enter your name.'); return; }
+    S.playerName=n;
+  }
+  startHunt(S.hunt);
+}
+
+function goScreen(screen){
+  stopHunt();
+  destroyMap();
+  S.screen=screen; render();
+}
+
+function copyLink(url){
+  const btn=document.getElementById('copybtn');
+  const ok=()=>{
+    if(btn){ btn.textContent='✓ COPIED!'; btn.style.background='linear-gradient(135deg,#27ae60,#1e8449)'; }
+    setTimeout(()=>{ if(btn){ btn.textContent='COPY LINK TO SHARE'; btn.style.background=''; }},2500);
+  };
+  if(navigator.clipboard) navigator.clipboard.writeText(url).then(ok).catch(()=>clipFallback(url,ok));
+  else clipFallback(url,ok);
+}
+function clipFallback(text,cb){
+  const el=document.createElement('textarea');
+  el.value=text; el.style.cssText='position:fixed;opacity:0;';
+  document.body.appendChild(el); el.focus(); el.select();
+  try{ document.execCommand('copy'); cb(); }catch(e){}
+  document.body.removeChild(el);
+}
+
+// ── Hunt engine ───────────────────────────────────────────────────────────────
+function attachOrientation(){
+  function onOrient(e){
+    if(e.webkitCompassHeading!=null&&e.webkitCompassHeading!==0){
+      S.heading=e.webkitCompassHeading;
+    } else if(e.alpha!=null){
+      S.heading=(360-e.alpha)%360;
+    }
+    const btn=document.getElementById('compass-btn-wrap');
+    if(btn&&S.heading!=null) btn.style.display='none';
+    if(S.gpsBearing!=null){
+      S.displayBearing=(S.gpsBearing-S.heading+360)%360;
+      updateCompass();
+    }
+  }
+  window.addEventListener('deviceorientation',onOrient,true);
+  S.orientHandler=onOrient;
+}
+
+function requestCompass(){
+  if(typeof DeviceOrientationEvent!=='undefined'&&
+     typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission()
+      .then(r=>{ if(r==='granted') attachOrientation(); })
+      .catch(()=>{});
+  } else {
+    attachOrientation();
+  }
+}
+
+function startHunt(hunt){
+  stopHunt();
+  S.found=false; S.userPos=null; S.gpsBearing=null; S.displayBearing=null; S.heading=null;
+  S.playerId=S.playerId||('p'+Math.random().toString(36).slice(2));
+  S.screen='hunt'; render();
+
+  if(!navigator.geolocation) return;
+
+  // Compass
+  if(typeof DeviceOrientationEvent!=='undefined'&&
+     typeof DeviceOrientationEvent.requestPermission==='function'){
+    const btn=document.getElementById('compass-btn-wrap');
+    if(btn) btn.style.display='block';
+  } else {
+    attachOrientation();
+  }
+
+  // Firebase leaderboard listener
+  if(hunt.leaderboard && fbReady && db){
+    const huntId='hunt_'+encode({lat:hunt.lat,lon:hunt.lon}).slice(0,16);
+    S.leaderRef=db.ref('hunts/'+huntId+'/players');
+    S.leaderUnsub=S.leaderRef.on('value',snap=>{
+      const data=snap.val()||{};
+      S.leaders=Object.entries(data)
+        .map(([id,v])=>({id,...v}))
+        .sort((a,b)=>(a.dist??Infinity)-(b.dist??Infinity));
+      leaderHtmlBlock();
+    });
+  }
+
+  // GPS
+  S.watchId=navigator.geolocation.watchPosition(
+    p=>{
+      const here={lat:p.coords.latitude,lon:p.coords.longitude};
+      const there={lat:hunt.lat,lon:hunt.lon};
+      S.userPos=here;
+      S.gpsBearing=calcBearing(here,there);
+      S.displayBearing=S.heading!=null?(S.gpsBearing-S.heading+360)%360:S.gpsBearing;
+      S.currentDist=calcDistance(here,there);
+      if(S.currentDist<=(hunt.radiusM||50)&&!S.found) S.found=true;
+      // Push to Firebase
+      if(hunt.leaderboard&&fbReady&&db&&S.leaderRef){
+        S.leaderRef.child(S.playerId).set({
+          name:S.playerName||'Hunter',
+          dist:Math.round(S.currentDist),
+          ts:Date.now()
+        });
+      }
+      updateCompass();
+    },
+    ()=>{},
+    {enableHighAccuracy:true,maximumAge:2000,timeout:15000}
+  );
+}
+
+function leaderHtmlBlock(){
+  const h=S.hunt;
+  const rows=document.getElementById('leaderboard-rows');
+  if(!rows) return;
+  if(!S.leaders.length){
+    rows.innerHTML='<div style="color:#ffffff33;font-size:13px;text-align:center;padding:10px;">Waiting for players…</div>';
+    return;
+  }
+  rows.innerHTML=S.leaders.slice(0,10).map((p,i)=>`
+    <div class="leader-row ${p.id===S.playerId?'leader-me':''}">
+      <div class="leader-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)}</div>
+      <div class="leader-name">${esc(p.name)}${p.id===S.playerId?' (you)':''}</div>
+      <div class="leader-dist">${h.showDist&&p.dist!=null?fmtDist(p.dist,h.units):'—'}</div>
+    </div>`).join('');
+}
+
+function stopHunt(){
+  if(S.watchId){ navigator.geolocation.clearWatch(S.watchId); S.watchId=null; }
+  if(S.orientHandler){ window.removeEventListener('deviceorientation',S.orientHandler,true); S.orientHandler=null; }
+  if(S.spinInterval){ clearInterval(S.spinInterval); S.spinInterval=null; }
+  if(S.leaderRef&&S.leaderUnsub){ S.leaderRef.off('value',S.leaderUnsub); S.leaderRef=null; }
+  // Remove self from leaderboard on leave
+  if(fbReady&&db&&S.hunt&&S.hunt.leaderboard&&S.playerId){
+    const huntId='hunt_'+encode({lat:S.hunt.lat,lon:S.hunt.lon}).slice(0,16);
+    db.ref('hunts/'+huntId+'/players/'+S.playerId).remove();
+  }
+}
+
+function leaveHunt(){
+  stopHunt();
+  S.hunt=null; S.found=false; S.userPos=null; S.leaders=[];
+  S.screen='home'; render();
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function showErr(id,msg){
+  const el=document.getElementById(id);
+  if(el){ el.textContent=msg; el.classList.remove('hidden'); }
+}
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  const p=new URLSearchParams(window.location.search);
+  const code=p.get('hunt');
+  if(code){
+    const hunt=decode(code);
+    if(hunt){ S.hunt=hunt; S.screen='name'; render(); return; }
+  }
+  render();
+});
+</script>
+</body>
+</html>
