@@ -50,23 +50,23 @@ body::after{
 
 .card{
   position:relative;z-index:1;
-  background:var(--surface);
-  border-radius:16px;
-  padding:30px 26px;
-  border:1px solid #ffffff0d;
+  background:linear-gradient(160deg,#0f0f1e 0%,#0a0a16 100%);
+  border-radius:20px;
+  padding:32px 28px;
+  border:1px solid #ffffff0f;
   box-shadow:
-    0 0 0 1px #ff2d7811,
-    0 30px 80px #00000088,
-    0 0 60px #ff2d7808,
-    inset 0 1px 0 #ffffff08;
+    0 0 0 1px #ff2d780a,
+    0 40px 100px #00000099,
+    0 0 80px #ff2d7806,
+    inset 0 1px 0 #ffffff0a;
   max-width:420px;width:100%;
 }
 
 /* Neon top bar */
 .card::before{
-  content:'';position:absolute;top:0;left:16px;right:16px;height:2px;border-radius:2px;
-  background:linear-gradient(90deg,transparent,var(--hot),var(--teal),transparent);
-  box-shadow:0 0 20px var(--hot),0 0 40px #ff2d7844;
+  content:'';position:absolute;top:0;left:40px;right:40px;height:1px;border-radius:1px;
+  background:linear-gradient(90deg,transparent,#ff2d78cc,#00f5d499,transparent);
+  box-shadow:0 0 12px #ff2d7866,0 0 24px #ff2d7822;
 }
 
 /* Fonts */
@@ -94,31 +94,33 @@ select.inp option{background:#0e0e1a;color:var(--text);}
 
 /* Primary button — hot pink neon */
 .btn-main{
-  background:linear-gradient(135deg,#ff2d78,#d4005a);
+  background:linear-gradient(135deg,#ff2d78 0%,#c4004f 100%);
   border:none;border-radius:12px;
   color:#fff;
-  padding:16px 20px;
-  font-family:var(--head);font-size:18px;letter-spacing:3px;
+  padding:15px 20px;
+  font-family:var(--head);font-size:17px;letter-spacing:4px;
   width:100%;cursor:pointer;
-  box-shadow:0 0 30px #ff2d7855,0 4px 20px #00000044;
-  transition:all .2s;
+  box-shadow:0 0 24px #ff2d7840,0 6px 24px #00000055;
+  transition:all .25s;
+  text-shadow:0 1px 4px #00000033;
 }
-.btn-main:hover{box-shadow:0 0 50px #ff2d7888,0 4px 20px #00000044;transform:translateY(-1px);}
+.btn-main:hover{box-shadow:0 0 40px #ff2d7866,0 6px 24px #00000055;transform:translateY(-2px);}
+.btn-main:active{transform:translateY(0);}
 .btn-main:disabled{opacity:.3;cursor:default;transform:none;box-shadow:none;}
 
 /* Secondary — teal outline */
 .btn-teal{
   background:transparent;
-  border:1px solid var(--teal);
+  border:1px solid #00f5d466;
   border-radius:12px;
-  color:var(--teal);
-  padding:15px 20px;
-  font-family:var(--head);font-size:18px;letter-spacing:3px;
+  color:#00f5d4;
+  padding:14px 20px;
+  font-family:var(--head);font-size:17px;letter-spacing:4px;
   width:100%;cursor:pointer;
-  box-shadow:0 0 20px #00f5d422,inset 0 0 20px #00f5d408;
-  transition:all .2s;
+  box-shadow:0 0 16px #00f5d414,inset 0 0 16px #00f5d406;
+  transition:all .25s;
 }
-.btn-teal:hover{box-shadow:0 0 40px #00f5d455,inset 0 0 20px #00f5d414;color:#fff;border-color:#fff;}
+.btn-teal:hover{box-shadow:0 0 30px #00f5d433,inset 0 0 20px #00f5d410;border-color:#00f5d499;}
 
 /* Ghost */
 .btn-ghost{
@@ -273,14 +275,14 @@ function render(){
 // HOME
 function tmplHome(){
   return `
-  <div style="text-align:center;padding:8px 0 32px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:8px;
-      color:#ff2d78;line-height:1;animation:hotPulse 3s ease-in-out infinite;
-      text-shadow:0 0 30px #ff2d78,0 0 60px #ff2d7855;">
+  <div style="text-align:center;padding:4px 0 30px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:56px;letter-spacing:10px;
+      color:#ff2d78;line-height:1;
+      text-shadow:0 0 40px #ff2d7866,0 0 80px #ff2d7822;">
       EARTH<br/>HUNT
     </div>
-    <div style="font-family:'Space Mono',monospace;font-size:10px;color:#00f5d4;
-      letter-spacing:5px;margin-top:12px;opacity:.8;">GLOBAL TREASURE HUNT</div>
+    <div style="font-family:'Space Mono',monospace;font-size:9px;color:#00f5d4;
+      letter-spacing:6px;margin-top:14px;opacity:.6;text-transform:uppercase;">Global Treasure Hunt</div>
   </div>
   <div class="neon-line" style="margin-bottom:24px;opacity:.5;"></div>
   <div class="gap">
@@ -457,16 +459,22 @@ function compassSVG(){
     <!-- Inner accent ring -->
     <circle cx="120" cy="120" r="109" fill="none" stroke="#00f5d410" stroke-width="1"/>
     ${ticks}${labels}
-    <!-- Arrow group -->
+    <!-- Arrow group — pink tip = FOLLOW THIS DIRECTION -->
     <g id="compass-arrow" transform="rotate(0,120,120)" filter="url(#glow)">
-      <!-- North: hot pink -->
-      <polygon points="120,16 131,106 120,96 109,106" fill="#ff2d78"/>
-      <polygon points="120,16 125,60 120,55 115,60" fill="#ff7aaa" opacity=".6"/>
-      <!-- South: teal dim -->
-      <polygon points="120,224 131,134 120,144 109,134" fill="#00f5d4" opacity=".25"/>
-      <!-- Center -->
-      <circle cx="120" cy="120" r="9" fill="#080810" stroke="#ff2d78" stroke-width="2"/>
+      <!-- South tail: very dim so it doesn't confuse -->
+      <polygon points="120,218 128,136 120,144 112,136" fill="#ffffff" opacity=".08"/>
+      <!-- North body -->
+      <polygon points="120,108 130,108 120,22 110,108" fill="#ff2d78" opacity=".7"/>
+      <!-- North bright leading tip — the thing to follow -->
+      <polygon points="120,22 128,72 120,62 112,72" fill="#ff2d78"/>
+      <polygon points="120,22 124,46 120,42 116,46" fill="#ffffff" opacity=".7"/>
+      <!-- Center hub -->
+      <circle cx="120" cy="120" r="10" fill="#080810" stroke="#ff2d7888" stroke-width="1.5"/>
       <circle cx="120" cy="120" r="4" fill="#ff2d78"/>
+      <!-- "GO" label near the tip -->
+      <text x="120" y="10" text-anchor="middle" dominant-baseline="middle"
+        font-family="Bebas Neue,sans-serif" font-size="9" fill="#ff2d78"
+        letter-spacing="2" opacity=".9">GO</text>
     </g>
   </svg>`;
 }
@@ -530,13 +538,13 @@ function tmplHunt(){
     ${h.showDist?`<div id="hunt-dist" style="font-family:'Space Mono',monospace;font-size:12px;
       color:#00f5d4;text-align:center;letter-spacing:2px;min-height:18px;"></div>`:''}
 
-    <div style="background:#ffffff05;border:1px solid #ffffff08;border-radius:10px;
+    ${!h.showDist?`
+    <div style="background:#ffffff04;border:1px solid #ffffff08;border-radius:10px;
       padding:12px 18px;text-align:center;width:100%;">
-      <div style="font-size:12px;color:var(--muted);font-weight:300;line-height:1.8;">
-        No map. No distance. Just a bearing.<br/>
-        <span style="color:#ffffff44;font-size:11px;">Go figure it out.</span>
+      <div style="font-size:12px;color:var(--muted);font-weight:300;line-height:1.8;letter-spacing:.2px;">
+        The fun is figuring out how to get there.
       </div>
-    </div>
+    </div>`:''}
 
     ${leaderSection}
 
