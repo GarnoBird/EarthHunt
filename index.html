@@ -4,206 +4,187 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>EARTH HUNT</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 :root{
-  --pink:#ff71ce;
-  --cyan:#01cdfe;
-  --purple:#b967ff;
-  --yellow:#fffb96;
-  --bg:#0d0015;
-  --card:#130020;
-  --border:#ff71ce33;
-  --text:#e8d5ff;
-  --muted:#9d7fc4;
-  --mono:'Share Tech Mono',monospace;
-  --head:'Orbitron',sans-serif;
-  --body:'Rajdhani',sans-serif;
+  --hot:#ff2d78;
+  --teal:#00f5d4;
+  --gold:#ffb830;
+  --bg:#080810;
+  --surface:#0e0e1a;
+  --surface2:#141428;
+  --text:#f0e6ff;
+  --muted:#8878a8;
+  --head:'Bebas Neue',sans-serif;
+  --body:'Inter',sans-serif;
+  --mono:'Space Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{min-height:100vh;}
+
 body{
   background:var(--bg);
   background-image:
-    radial-gradient(ellipse 80% 50% at 10% 0%,#3d007a44 0%,transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 100%,#00aaff22 0%,transparent 60%),
-    linear-gradient(180deg,#0d001500 0%,#0d0015 100%);
+    radial-gradient(ellipse 100% 60% at 50% 0%, #1a0028 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, #00100e 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, #1a000d 0%, transparent 50%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:20px 16px;
+  padding:24px 16px;
   font-family:var(--body);color:var(--text);
+  min-height:100vh;
 }
-/* Scanline overlay */
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,#00000018 2px,#00000018 4px);
+
+/* Subtle grid floor */
+body::after{
+  content:'';position:fixed;bottom:0;left:0;right:0;height:40vh;pointer-events:none;z-index:0;
+  background:
+    linear-gradient(transparent 0%, #ff2d7808 100%),
+    repeating-linear-gradient(90deg,#ff2d7808 0px,transparent 1px,transparent 60px,#ff2d7808 61px),
+    repeating-linear-gradient(0deg,#ff2d7808 0px,transparent 1px,transparent 40px,#ff2d7808 41px);
+  mask-image:linear-gradient(to top,rgba(0,0,0,.3),transparent);
 }
+
 .card{
   position:relative;z-index:1;
-  background:var(--card);
-  border-radius:4px;
-  padding:28px 24px;
-  border:1px solid var(--border);
-  box-shadow:0 0 40px #ff71ce18,0 0 80px #b967ff0a,inset 0 0 40px #00000033;
+  background:var(--surface);
+  border-radius:16px;
+  padding:30px 26px;
+  border:1px solid #ffffff0d;
+  box-shadow:
+    0 0 0 1px #ff2d7811,
+    0 30px 80px #00000088,
+    0 0 60px #ff2d7808,
+    inset 0 1px 0 #ffffff08;
   max-width:420px;width:100%;
 }
-/* Corner accents */
-.card::before,.card::after{
-  content:'';position:absolute;width:16px;height:16px;
-  border-color:var(--pink);border-style:solid;
-}
-.card::before{top:-1px;left:-1px;border-width:2px 0 0 2px;}
-.card::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;}
 
+/* Neon top bar */
+.card::before{
+  content:'';position:absolute;top:0;left:16px;right:16px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--hot),var(--teal),transparent);
+  box-shadow:0 0 20px var(--hot),0 0 40px #ff2d7844;
+}
+
+/* Fonts */
+.head{font-family:var(--head);letter-spacing:3px;}
+.mono{font-family:var(--mono);font-size:11px;}
+
+/* Inputs */
 button{font-family:var(--body);cursor:pointer;border:none;}
 input,textarea,select{font-family:var(--mono);}
 
 .inp{
-  background:#ffffff06;
-  border:1px solid #ff71ce33;
-  border-radius:2px;
-  color:var(--cyan);
-  padding:11px 14px;
-  font-size:13px;
+  background:#ffffff07;
+  border:1px solid #ffffff12;
+  border-radius:10px;
+  color:var(--text);
+  padding:12px 16px;
+  font-size:12px;
   width:100%;
   outline:none;
-  letter-spacing:.5px;
+  transition:border-color .2s,box-shadow .2s;
 }
-.inp::placeholder{color:#9d7fc466;}
-.inp:focus{border-color:var(--cyan);box-shadow:0 0 12px #01cdfe22;}
-select.inp option{background:#130020;color:var(--cyan);}
+.inp::placeholder{color:var(--muted);opacity:.7;}
+.inp:focus{border-color:#ff2d7844;box-shadow:0 0 16px #ff2d7814;}
+select.inp option{background:#0e0e1a;color:var(--text);}
 
+/* Primary button — hot pink neon */
 .btn-main{
-  background:transparent;
-  border:1px solid var(--pink);
-  border-radius:2px;
-  color:var(--pink);
-  padding:14px 20px;
-  font-family:var(--head);
-  font-size:13px;
-  font-weight:700;
-  width:100%;
-  letter-spacing:3px;
-  text-transform:uppercase;
-  cursor:pointer;
+  background:linear-gradient(135deg,#ff2d78,#d4005a);
+  border:none;border-radius:12px;
+  color:#fff;
+  padding:16px 20px;
+  font-family:var(--head);font-size:18px;letter-spacing:3px;
+  width:100%;cursor:pointer;
+  box-shadow:0 0 30px #ff2d7855,0 4px 20px #00000044;
   transition:all .2s;
-  box-shadow:0 0 20px #ff71ce22;
-  position:relative;
-  overflow:hidden;
 }
-.btn-main::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,#ff71ce22,transparent);
-  opacity:0;transition:opacity .2s;
-}
-.btn-main:hover::before{opacity:1;}
-.btn-main:hover{box-shadow:0 0 30px #ff71ce44;color:#fff;}
-.btn-main:disabled{opacity:.3;cursor:default;box-shadow:none;}
+.btn-main:hover{box-shadow:0 0 50px #ff2d7888,0 4px 20px #00000044;transform:translateY(-1px);}
+.btn-main:disabled{opacity:.3;cursor:default;transform:none;box-shadow:none;}
 
-.btn-secondary{
+/* Secondary — teal outline */
+.btn-teal{
   background:transparent;
-  border:1px solid #ff71ce22;
-  border-radius:2px;
+  border:1px solid var(--teal);
+  border-radius:12px;
+  color:var(--teal);
+  padding:15px 20px;
+  font-family:var(--head);font-size:18px;letter-spacing:3px;
+  width:100%;cursor:pointer;
+  box-shadow:0 0 20px #00f5d422,inset 0 0 20px #00f5d408;
+  transition:all .2s;
+}
+.btn-teal:hover{box-shadow:0 0 40px #00f5d455,inset 0 0 20px #00f5d414;color:#fff;border-color:#fff;}
+
+/* Ghost */
+.btn-ghost{
+  background:transparent;
+  border:1px solid #ffffff14;
+  border-radius:10px;
   color:var(--muted);
   padding:12px 20px;
-  font-family:var(--head);
-  font-size:11px;
-  font-weight:400;
-  width:100%;
-  letter-spacing:2px;
-  cursor:pointer;
+  font-family:var(--body);font-size:13px;font-weight:500;
+  width:100%;cursor:pointer;
   transition:all .2s;
 }
-.btn-secondary:hover{border-color:#ff71ce55;color:var(--text);}
-
-.btn-cyan{
-  background:transparent;
-  border:1px solid var(--cyan);
-  border-radius:2px;
-  color:var(--cyan);
-  padding:14px 20px;
-  font-family:var(--head);
-  font-size:13px;
-  font-weight:700;
-  width:100%;
-  letter-spacing:3px;
-  cursor:pointer;
-  transition:all .2s;
-  box-shadow:0 0 20px #01cdfe22;
-}
-.btn-cyan:hover{box-shadow:0 0 30px #01cdfe44;color:#fff;}
+.btn-ghost:hover{border-color:#ffffff28;color:var(--text);}
 
 .gap{display:flex;flex-direction:column;gap:12px;}
 .err{
-  border:1px solid #ff71ce66;
-  border-radius:2px;
-  padding:10px 14px;
-  color:var(--pink);
-  font-size:12px;
-  line-height:1.5;
-  font-family:var(--mono);
-  background:#ff71ce08;
+  background:#ff2d7810;border:1px solid #ff2d7840;
+  border-radius:10px;padding:10px 14px;
+  color:#ff7aaa;font-family:var(--mono);font-size:11px;line-height:1.6;
 }
 .hidden{display:none;}
 
+/* Section label */
 .label{
-  color:var(--muted);
-  font-size:10px;
-  letter-spacing:3px;
-  text-transform:uppercase;
-  font-family:var(--head);
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+  letter-spacing:2px;text-transform:uppercase;
 }
 
 /* Toggle */
 .toggle-row{
   display:flex;align-items:center;justify-content:space-between;
-  border:1px solid #ff71ce22;border-radius:2px;padding:11px 14px;
-  background:#ff71ce04;
+  background:#ffffff05;border:1px solid #ffffff0e;
+  border-radius:10px;padding:12px 16px;
 }
-.toggle-label{font-size:13px;color:var(--text);letter-spacing:.5px;}
-.toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
+.toggle-label{font-size:14px;font-weight:500;color:var(--text);}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
 .toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:#ffffff11;border-radius:0;transition:.3s;cursor:pointer;border:1px solid #ff71ce33;}
-.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:var(--muted);transition:.3s;}
-.toggle input:checked+.toggle-slider{background:#ff71ce22;border-color:var(--pink);}
-.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:var(--pink);}
+.toggle-slider{position:absolute;inset:0;background:#ffffff18;border-radius:24px;transition:.3s;cursor:pointer;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:var(--muted);border-radius:50%;transition:.3s;}
+.toggle input:checked+.toggle-slider{background:linear-gradient(135deg,#ff2d78,#d4005a);box-shadow:0 0 10px #ff2d7866;}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px);background:#fff;}
 
 /* Map */
-#map-picker{width:100%;height:240px;border-radius:2px;border:1px solid #ff71ce33;overflow:hidden;cursor:crosshair;}
-.leaflet-container{background:#0d0015;}
+#map-picker{width:100%;height:240px;border-radius:12px;border:1px solid #ffffff12;overflow:hidden;cursor:crosshair;}
+.leaflet-container{background:#080810;}
 
 /* Leaderboard */
 .leader-row{
   display:flex;align-items:center;gap:10px;
-  padding:8px 12px;margin-bottom:4px;
-  border:1px solid #ff71ce18;
-  border-radius:2px;
-  background:#ff71ce04;
+  padding:9px 14px;margin-bottom:5px;
+  border-radius:10px;background:#ffffff06;border:1px solid #ffffff0a;
 }
-.leader-row.me{border-color:#01cdfe44;background:#01cdfe08;}
-.leader-rank{font-family:var(--head);font-size:11px;color:var(--yellow);width:22px;text-align:center;}
-.leader-name{flex:1;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.5px;}
+.leader-row.me{background:#ff2d7810;border-color:#ff2d7830;}
+.leader-rank{font-family:var(--head);font-size:14px;color:var(--gold);width:24px;text-align:center;}
+.leader-name{flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .leader-dist{font-size:11px;color:var(--muted);font-family:var(--mono);}
 
 /* Divider */
-.divider{display:flex;align-items:center;gap:10px;}
-.divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,#ff71ce33,transparent);}
-.divider-text{color:var(--muted);font-size:10px;letter-spacing:2px;font-family:var(--head);}
+.neon-line{height:1px;background:linear-gradient(90deg,transparent,var(--hot) 30%,var(--teal) 70%,transparent);opacity:.3;margin:4px 0;}
 
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .3s ease forwards;}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-@keyframes glitch{
-  0%,100%{text-shadow:2px 0 var(--pink),-2px 0 var(--cyan);}
-  25%{text-shadow:-2px 0 var(--pink),2px 0 var(--cyan);}
-  50%{text-shadow:2px 2px var(--pink),-2px -2px var(--cyan);}
-  75%{text-shadow:0 -2px var(--pink),0 2px var(--cyan);}
-}
-@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
-@keyframes scanline{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .35s ease forwards;}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes hotPulse{0%,100%{text-shadow:0 0 20px #ff2d78,0 0 40px #ff2d7866}50%{text-shadow:0 0 40px #ff2d78,0 0 80px #ff2d78aa}}
+@keyframes spinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes signalPulse{0%,100%{opacity:.4}50%{opacity:1}}
 </style>
 </head>
 <body>
@@ -211,13 +192,11 @@ select.inp option{background:#130020;color:var(--cyan);}
 <script>
 window.onerror=function(msg,src,line,col,err){
   const app=document.getElementById('app');
-  if(app) app.innerHTML=`<div style="color:#ff71ce;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.8;padding:8px;">
-    <div style="font-size:14px;margin-bottom:10px;letter-spacing:2px;">// ERROR</div>
-    <div>${msg}</div><div>line ${line}</div></div>`;
+  if(app) app.innerHTML=`<div style="color:#ff7aaa;font-family:'Space Mono',monospace;font-size:11px;line-height:1.8;padding:8px;">
+    <b>ERROR</b><br>${msg}<br>line ${line}</div>`;
   return false;
 };
 
-// ── Firebase ──────────────────────────────────────────────────────────────────
 const FIREBASE_CONFIG={
   apiKey:"AIzaSyCYwNHGRO4yRnYQpeUyWxr60CQVITSvO1s",
   authDomain:"earthhunt-389c2.firebaseapp.com",
@@ -228,13 +207,9 @@ const FIREBASE_CONFIG={
   appId:"1:297322022675:web:40e53c39909f63c5777ce6"
 };
 let db=null,fbReady=false;
-try{
-  firebase.initializeApp(FIREBASE_CONFIG);
-  db=firebase.database();
-  fbReady=true;
-}catch(e){console.warn('Firebase:',e.message);}
+try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();fbReady=true;}
+catch(e){console.warn('Firebase:',e.message);}
 
-// ── Math ──────────────────────────────────────────────────────────────────────
 const EARTH_R=6371000;
 function toRad(d){return d*Math.PI/180;}
 function toDeg(r){return r*180/Math.PI;}
@@ -251,16 +226,13 @@ function calcDistance(from,to){
 }
 function cardinal(d){return["N","NE","E","SE","S","SW","W","NW"][Math.round(d/45)%8];}
 function fmtDist(m,unit){
-  if(unit==='ft') return Math.round(m*3.28084).toLocaleString()+'ft';
-  if(unit==='m')  return Math.round(m).toLocaleString()+'m';
+  if(unit==='ft') return Math.round(m*3.28084).toLocaleString()+' ft';
+  if(unit==='m')  return Math.round(m).toLocaleString()+' m';
   const ft=Math.round(m*3.28084);
-  return ft<1000?ft+'ft / '+Math.round(m)+'m':(m/1609.34).toFixed(1)+'mi / '+(m/1000).toFixed(1)+'km';
+  return ft<1000?ft+' ft':((m/1609.34).toFixed(1)+' mi');
 }
 
-// ── Encode/Decode ─────────────────────────────────────────────────────────────
-function encode(obj){
-  return btoa(JSON.stringify(obj)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
-}
+function encode(obj){return btoa(JSON.stringify(obj)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
 function decode(code){
   try{
     const b64=code.trim().replace(/-/g,'+').replace(/_/g,'/');
@@ -270,288 +242,315 @@ function decode(code){
   }catch(e){}
   return null;
 }
-
-// Hunt ID: stable hash of lat/lon/ts so each hunt has its own leaderboard
 function huntId(hunt){
   const key=`${hunt.lat.toFixed(5)}_${hunt.lon.toFixed(5)}_${hunt.ts}`;
-  let h=0;
-  for(let i=0;i<key.length;i++){h=(Math.imul(31,h)+key.charCodeAt(i))|0;}
+  let h=0;for(let i=0;i<key.length;i++){h=(Math.imul(31,h)+key.charCodeAt(i))|0;}
   return 'h'+(h>>>0).toString(36);
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
 const S={
-  screen:'home',
-  hunt:null, shareCode:null,
-  watchId:null, orientHandler:null, spinInterval:null,
-  gpsBearing:null, displayBearing:null, heading:null,
-  userPos:null, found:false, currentDist:null,
-  playerName:null, playerId:null,
-  leaderRef:null, leaderUnsub:null, leaders:[],
-  pickMap:null, pickMarker:null, pickedLat:null, pickedLon:null,
+  screen:'home',hunt:null,shareCode:null,
+  watchId:null,orientHandler:null,spinInterval:null,
+  gpsBearing:null,displayBearing:null,heading:null,
+  userPos:null,found:false,currentDist:null,
+  playerName:null,playerId:null,
+  leaderRef:null,leaderUnsub:null,leaders:[],
+  pickMap:null,pickMarker:null,pickedLat:null,pickedLon:null,
 };
 
-// ── Render ────────────────────────────────────────────────────────────────────
 function render(){
-  const app=document.getElementById('app');
-  if(!app) return;
+  const app=document.getElementById('app');if(!app)return;
   switch(S.screen){
-    case 'home':  app.innerHTML=tmplHome(); break;
-    case 'hide':  app.innerHTML=tmplHide(); setTimeout(initMap,0); break;
-    case 'share': app.innerHTML=tmplShare(); break;
-    case 'join':  app.innerHTML=tmplJoin(); break;
-    case 'name':  app.innerHTML=tmplName(); break;
-    case 'hunt':  app.innerHTML=tmplHunt(); break;
+    case 'home':  app.innerHTML=tmplHome();break;
+    case 'hide':  app.innerHTML=tmplHide();setTimeout(initMap,0);break;
+    case 'share': app.innerHTML=tmplShare();break;
+    case 'join':  app.innerHTML=tmplJoin();break;
+    case 'name':  app.innerHTML=tmplName();break;
+    case 'hunt':  app.innerHTML=tmplHunt();break;
   }
 }
 
-// ── HOME ──────────────────────────────────────────────────────────────────────
+// HOME
 function tmplHome(){
   return `
-  <div style="text-align:center;margin-bottom:32px;">
-    <div style="font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;
-      color:#ff71ce;letter-spacing:6px;animation:glitch 4s ease-in-out infinite;">
-      EARTH HUNT
+  <div style="text-align:center;padding:8px 0 32px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:8px;
+      color:#ff2d78;line-height:1;animation:hotPulse 3s ease-in-out infinite;
+      text-shadow:0 0 30px #ff2d78,0 0 60px #ff2d7855;">
+      EARTH<br/>HUNT
     </div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#b967ff;
-      letter-spacing:4px;margin-top:8px;opacity:.8;">
-      // GLOBAL TREASURE HUNT //
-    </div>
-    <div style="width:60px;height:1px;background:linear-gradient(90deg,transparent,#ff71ce,transparent);margin:16px auto 0;"></div>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:#00f5d4;
+      letter-spacing:5px;margin-top:12px;opacity:.8;">GLOBAL TREASURE HUNT</div>
   </div>
+  <div class="neon-line" style="margin-bottom:24px;opacity:.5;"></div>
   <div class="gap">
-    <p style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#9d7fc4;
-      text-align:center;line-height:1.9;letter-spacing:.3px;">
+    <p style="font-family:'Inter',sans-serif;font-size:13px;font-weight:300;
+      color:var(--muted);text-align:center;line-height:1.9;letter-spacing:.2px;">
       Hide treasure anywhere on Earth.<br/>
       Hunters get only a compass bearing —<br/>
-      <span style="color:#ff71ce;">how you get there is up to you.</span>
+      <span style="color:#f0e6ff;font-weight:500;">how you get there is up to you.</span>
     </p>
-    <div style="height:12px;"></div>
-    <button class="btn-main" onclick="goScreen('hide')">▶ HIDE TREASURE</button>
-    <button class="btn-cyan" onclick="goScreen('join')">◈ JOIN A HUNT</button>
+    <div style="height:8px;"></div>
+    <button class="btn-main" onclick="goScreen('hide')">HIDE TREASURE</button>
+    <button class="btn-teal" onclick="goScreen('join')">JOIN A HUNT</button>
   </div>`;
 }
 
-// ── HIDE ──────────────────────────────────────────────────────────────────────
+// HIDE
 function tmplHide(){
   return `
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-    <button class="btn-secondary" style="width:auto;padding:6px 12px;font-size:11px;" onclick="goScreen('home')">← BACK</button>
-    <div style="font-family:'Orbitron',sans-serif;font-size:12px;color:#ff71ce;letter-spacing:3px;">HIDE TREASURE</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
+    <button class="btn-ghost" style="width:auto;padding:8px 14px;font-size:12px;" onclick="goScreen('home')">← Back</button>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#ff2d78;">HIDE TREASURE</div>
   </div>
   <div class="gap">
-    <input class="inp" id="tname" placeholder="// treasure name (optional)"/>
+    <input class="inp" id="tname" placeholder="Treasure name (optional)"/>
 
-    <div class="label" style="margin-top:4px;">▸ LOCATION</div>
-    <div style="display:flex;gap:6px;">
-      <input class="inp" id="addr-input" placeholder="search address or place…" style="flex:1;"/>
-      <button onclick="searchAddress()" style="background:#ff71ce22;border:1px solid #ff71ce44;border-radius:2px;color:#ff71ce;padding:0 14px;font-size:14px;cursor:pointer;white-space:nowrap;">⌕</button>
+    <div class="label" style="margin-top:4px;">Location</div>
+    <div style="display:flex;gap:8px;">
+      <input class="inp" id="addr-input" placeholder="Search address or place…" style="flex:1;"/>
+      <button onclick="searchAddress()" style="background:#ff2d7822;border:1px solid #ff2d7844;border-radius:10px;
+        color:#ff2d78;padding:0 16px;font-size:16px;cursor:pointer;">⌕</button>
     </div>
     <div id="map-picker"></div>
-    <div id="map-confirm" style="display:none;border:1px solid #01cdfe44;border-radius:2px;padding:10px 14px;background:#01cdfe08;">
-      <span style="color:#01cdfe;font-family:'Share Tech Mono',monospace;font-size:12px;">◉ location locked</span>
-      <span id="map-coord-text" style="color:#9d7fc4;font-size:11px;font-family:'Share Tech Mono',monospace;margin-left:8px;"></span>
+    <div id="map-confirm" style="display:none;background:#00f5d410;border:1px solid #00f5d433;border-radius:10px;padding:10px 14px;">
+      <span style="color:#00f5d4;font-family:'Space Mono',monospace;font-size:12px;">📍 Location set</span>
+      <span id="map-coord-text" style="color:var(--muted);font-size:11px;font-family:'Space Mono',monospace;margin-left:8px;"></span>
     </div>
-    <button id="locbtn" class="btn-secondary" onclick="jumpToMyLocation()" style="font-size:11px;letter-spacing:2px;">
-      ⊕ JUMP TO MY LOCATION
+    <button id="locbtn" class="btn-ghost" onclick="jumpToMyLocation()" style="font-size:13px;">
+      🎯 Jump to my location
     </button>
 
-    <div class="label" style="margin-top:8px;">▸ HUNT OPTIONS</div>
+    <div class="label" style="margin-top:8px;">Hunt Options</div>
 
     <select class="inp" id="opt-radius">
-      <option value="1.5">win radius: 5 ft</option>
-      <option value="4.5">win radius: 15 ft</option>
-      <option value="9">win radius: 30 ft</option>
-      <option value="15" selected>win radius: 50 ft</option>
-      <option value="30">win radius: 100 ft</option>
-      <option value="60">win radius: 200 ft</option>
+      <option value="1.5">Win radius: 5 ft</option>
+      <option value="4.5">Win radius: 15 ft</option>
+      <option value="9">Win radius: 30 ft</option>
+      <option value="15" selected>Win radius: 50 ft</option>
+      <option value="30">Win radius: 100 ft</option>
+      <option value="60">Win radius: 200 ft</option>
     </select>
 
     <select class="inp" id="opt-units">
-      <option value="both" selected>units: ft + m</option>
-      <option value="ft">units: feet only</option>
-      <option value="m">units: meters only</option>
+      <option value="both" selected>Units: ft + m</option>
+      <option value="ft">Units: feet only</option>
+      <option value="m">Units: meters only</option>
     </select>
 
     <label class="toggle-row">
-      <span class="toggle-label">📏 show distance to hunters</span>
+      <span class="toggle-label">📏 Show distance to hunters</span>
       <span class="toggle"><input type="checkbox" id="opt-showdist"/><span class="toggle-slider"></span></span>
     </label>
 
     <label class="toggle-row">
-      <span class="toggle-label">◈ enable leaderboard</span>
+      <span class="toggle-label">🏆 Enable leaderboard</span>
       <span class="toggle"><input type="checkbox" id="opt-leaderboard" ${fbReady?'':'disabled'}/><span class="toggle-slider"></span></span>
     </label>
 
-    <input class="inp" id="opt-message" placeholder="// winner message with emoji ✨ (optional)"/>
+    <input class="inp" id="opt-message" placeholder="Winner message with emoji ✨ (optional)"/>
 
     <div id="hide-err" class="err hidden"></div>
     <div style="height:4px;"></div>
-    <button id="hidebtn" class="btn-main" disabled onclick="doHide()">▶ HIDE THE TREASURE</button>
+    <button id="hidebtn" class="btn-main" disabled onclick="doHide()">HIDE THE TREASURE</button>
   </div>`;
 }
 
-// ── SHARE ─────────────────────────────────────────────────────────────────────
+// SHARE
 function tmplShare(){
   const url=window.location.origin+window.location.pathname+'?hunt='+S.shareCode;
   return `
   <div class="gap fade-in" style="align-items:center;text-align:center;">
-    <div style="font-family:'Orbitron',sans-serif;font-size:10px;color:#b967ff;letter-spacing:4px;margin-bottom:4px;">// TREASURE HIDDEN //</div>
-    <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:#ff71ce;letter-spacing:2px;font-weight:700;">${esc(S.hunt.name)||'HIDDEN'}</div>
-    <div style="width:40px;height:1px;background:linear-gradient(90deg,transparent,#ff71ce,transparent);margin:4px auto;"></div>
-
-    <div style="border:1px solid #ff71ce33;border-radius:2px;padding:14px;width:100%;background:#ff71ce04;">
-      <div class="label" style="margin-bottom:8px;">▸ HUNT CODE</div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#01cdfe;word-break:break-all;line-height:1.7;">${S.shareCode}</div>
+    <div style="font-size:52px;animation:bounce 1.2s ease infinite;">🗺️</div>
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:#ff2d78;
+        text-shadow:0 0 20px #ff2d7866;">TREASURE HIDDEN</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;">${esc(S.hunt.name)}</div>
     </div>
-    <div style="border:1px solid #ffffff0a;border-radius:2px;padding:12px 14px;width:100%;">
-      <div class="label" style="margin-bottom:6px;">▸ LINK</div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#9d7fc4;word-break:break-all;line-height:1.6;">${url}</div>
+    <div class="neon-line" style="width:100%;"></div>
+    <div style="background:#ffffff06;border:1px solid #ffffff0e;border-radius:12px;padding:16px;width:100%;">
+      <div class="label" style="margin-bottom:10px;">Hunt Code</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:#00f5d4;word-break:break-all;line-height:1.8;">${S.shareCode}</div>
     </div>
-    <button id="copybtn" class="btn-main" onclick="copyLink('${url}')">▶ COPY LINK</button>
-    <button class="btn-secondary" onclick="goScreen('hide')">HIDE ANOTHER</button>
+    <div style="background:#ffffff04;border:1px solid #ffffff08;border-radius:12px;padding:14px;width:100%;">
+      <div class="label" style="margin-bottom:8px;">Shareable Link</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);word-break:break-all;line-height:1.7;">${url}</div>
+    </div>
+    <button id="copybtn" class="btn-main" onclick="copyLink('${url}')">COPY LINK</button>
+    <button class="btn-ghost" onclick="goScreen('hide')">Hide another treasure</button>
   </div>`;
 }
 
-// ── JOIN ──────────────────────────────────────────────────────────────────────
+// JOIN
 function tmplJoin(){
   return `
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-    <button class="btn-secondary" style="width:auto;padding:6px 12px;font-size:11px;" onclick="goScreen('home')">← BACK</button>
-    <div style="font-family:'Orbitron',sans-serif;font-size:12px;color:#01cdfe;letter-spacing:3px;">JOIN A HUNT</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
+    <button class="btn-ghost" style="width:auto;padding:8px 14px;font-size:12px;" onclick="goScreen('home')">← Back</button>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#00f5d4;">JOIN A HUNT</div>
   </div>
   <div class="gap">
-    <div class="label">▸ PASTE YOUR HUNT CODE</div>
-    <textarea class="inp" id="huntcode" placeholder="// paste code here…" rows="4"
-      style="resize:vertical;line-height:1.6;font-size:11px;color:#01cdfe;"></textarea>
+    <div class="label">Paste your hunt code</div>
+    <textarea class="inp" id="huntcode" placeholder="Paste code here…" rows="4"
+      style="resize:vertical;line-height:1.7;color:#00f5d4;font-size:11px;"></textarea>
     <div id="join-err" class="err hidden"></div>
-    <button class="btn-cyan" onclick="doJoin()">◈ NEXT</button>
+    <button class="btn-teal" onclick="doJoin()">NEXT →</button>
   </div>`;
 }
 
-// ── NAME ──────────────────────────────────────────────────────────────────────
+// NAME
 function tmplName(){
   const needsName=S.hunt&&S.hunt.leaderboard;
   return `
-  <div style="text-align:center;margin-bottom:24px;">
-    <div style="font-family:'Orbitron',sans-serif;font-size:10px;color:#b967ff;letter-spacing:4px;margin-bottom:8px;">// READY TO HUNT //</div>
-    <div style="font-family:'Orbitron',sans-serif;font-size:18px;color:#ff71ce;letter-spacing:2px;">${esc(S.hunt.name)||'HIDDEN TREASURE'}</div>
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:5px;color:var(--muted);margin-bottom:6px;">READY TO HUNT</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:4px;color:#ff2d78;
+      text-shadow:0 0 20px #ff2d7855;">${esc(S.hunt.name)||'HIDDEN TREASURE'}</div>
   </div>
   <div class="gap">
     ${needsName?`
-    <div class="label">▸ ENTER YOUR NAME</div>
-    <input class="inp" id="player-name" placeholder="// your callsign" maxlength="20" style="text-align:center;font-size:14px;letter-spacing:2px;color:#ff71ce;"/>
-    `:`<p style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#9d7fc4;text-align:center;line-height:1.9;">the compass awaits.<br/>allow location when prompted.</p>`}
+    <div class="label">Your name for the leaderboard</div>
+    <input class="inp" id="player-name" placeholder="Enter your name…" maxlength="20"
+      style="text-align:center;font-size:15px;letter-spacing:1px;color:#ff2d78;font-family:'Inter',sans-serif;font-weight:600;"/>
+    `:`<p style="font-size:13px;color:var(--muted);text-align:center;line-height:1.9;font-weight:300;">
+      The compass awaits.<br/>Allow location access when prompted.
+    </p>`}
     <div id="name-err" class="err hidden"></div>
-    <div style="height:4px;"></div>
-    <button class="btn-main" onclick="doStartHunt()">▶ START HUNTING</button>
+    <div style="height:6px;"></div>
+    <button class="btn-main" onclick="doStartHunt()">START HUNTING</button>
   </div>`;
 }
 
-// ── COMPASS SVG ───────────────────────────────────────────────────────────────
+// COMPASS SVG — Miami neon style
 function compassSVG(){
   const ticks=Array.from({length:72},(_,i)=>{
-    const a=i*5,r=toRad(a-90),big=a%90===0,med=a%45===0,sm=a%15===0;
-    const len=big?16:med?10:sm?6:3;
-    const x1=120+104*Math.cos(r),y1=120+104*Math.sin(r);
-    const x2=120+(104-len)*Math.cos(r),y2=120+(104-len)*Math.sin(r);
-    const col=big?'#ff71ce':med?'#b967ff55':sm?'#ffffff22':'#ffffff11';
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${big?1.5:1}"/>`;
+    const a=i*5,r=toRad(a-90);
+    const big=a%90===0,med=a%45===0,sm=a%15===0;
+    const len=big?18:med?11:sm?6:3;
+    const x1=120+106*Math.cos(r),y1=120+106*Math.sin(r);
+    const x2=120+(106-len)*Math.cos(r),y2=120+(106-len)*Math.sin(r);
+    const col=big?'#ff2d7888':med?'#00f5d444':sm?'#ffffff18':'#ffffff0a';
+    return`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${big?2:1}"/>`;
   }).join('');
 
   const labels=[['N',0],['E',90],['S',180],['W',270]].map(([l,deg])=>{
     const r=toRad(deg-90),x=120+88*Math.cos(r),y=120+88*Math.sin(r);
-    const col=l==='N'?'#ff71ce':'#b967ff88';
-    return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle"
-      font-family="Orbitron,sans-serif" font-size="${l==='N'?11:9}" fill="${col}"
-      font-weight="700" letter-spacing="2">${l}</text>`;
+    return`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle"
+      font-family="Bebas Neue,sans-serif" font-size="${l==='N'?14:11}"
+      fill="${l==='N'?'#ff2d78':'#ffffff44'}" letter-spacing="2">${l}</text>`;
   }).join('');
 
-  return `<svg id="compass-svg" width="240" height="240" viewBox="0 0 240 240" style="display:block;margin:0 auto;filter:drop-shadow(0 0 20px #ff71ce33);">
+  return`<svg id="compass-svg" width="240" height="240" viewBox="0 0 240 240"
+    style="display:block;margin:0 auto;filter:drop-shadow(0 0 24px #ff2d7833) drop-shadow(0 0 8px #00000088);">
     <defs>
       <radialGradient id="cbg" cx="50%" cy="50%">
-        <stop offset="0%" stop-color="#1a0030"/>
-        <stop offset="100%" stop-color="#0d0015"/>
+        <stop offset="0%" stop-color="#1a0015"/>
+        <stop offset="60%" stop-color="#0e000f"/>
+        <stop offset="100%" stop-color="#080810"/>
       </radialGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
-    <circle cx="120" cy="120" r="119" fill="url(#cbg)" stroke="#ff71ce22" stroke-width="1"/>
-    <circle cx="120" cy="120" r="108" fill="none" stroke="#b967ff11" stroke-width="1"/>
+    <!-- Outer ring -->
+    <circle cx="120" cy="120" r="118" fill="url(#cbg)" stroke="#ff2d7820" stroke-width="1.5"/>
+    <!-- Inner accent ring -->
+    <circle cx="120" cy="120" r="109" fill="none" stroke="#00f5d410" stroke-width="1"/>
     ${ticks}${labels}
-    <g id="compass-arrow" transform="rotate(0,120,120)">
-      <polygon points="120,18 130,108 120,98 110,108" fill="#ff71ce" opacity=".95"/>
-      <polygon points="120,222 130,132 120,142 110,132" fill="#b967ff" opacity=".4"/>
-      <circle cx="120" cy="120" r="8" fill="#0d0015" stroke="#ff71ce" stroke-width="2"/>
-      <circle cx="120" cy="120" r="3" fill="#ff71ce"/>
+    <!-- Arrow group -->
+    <g id="compass-arrow" transform="rotate(0,120,120)" filter="url(#glow)">
+      <!-- North: hot pink -->
+      <polygon points="120,16 131,106 120,96 109,106" fill="#ff2d78"/>
+      <polygon points="120,16 125,60 120,55 115,60" fill="#ff7aaa" opacity=".6"/>
+      <!-- South: teal dim -->
+      <polygon points="120,224 131,134 120,144 109,134" fill="#00f5d4" opacity=".25"/>
+      <!-- Center -->
+      <circle cx="120" cy="120" r="9" fill="#080810" stroke="#ff2d78" stroke-width="2"/>
+      <circle cx="120" cy="120" r="4" fill="#ff2d78"/>
     </g>
   </svg>`;
 }
 
-// ── HUNT ──────────────────────────────────────────────────────────────────────
+// HUNT SCREEN
 function tmplHunt(){
   const h=S.hunt;
+
   if(S.found){
-    return `
+    return`
     <div class="gap fade-in" style="align-items:center;text-align:center;">
-      <div style="font-size:56px;animation:bounce 1s ease infinite;">🏆</div>
-      <div style="font-family:'Orbitron',sans-serif;font-size:22px;color:#ff71ce;letter-spacing:3px;font-weight:900;animation:glitch 2s infinite;">FOUND IT</div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#9d7fc4;letter-spacing:2px;">${esc(h.name)}</div>
+      <div style="font-size:60px;animation:bounce .9s ease infinite;">🏆</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:5px;
+        color:#ff2d78;text-shadow:0 0 30px #ff2d78,0 0 60px #ff2d7866;animation:hotPulse 2s infinite;">
+        YOU FOUND IT
+      </div>
+      <div style="color:var(--muted);font-size:13px;font-weight:500;">${esc(h.name)}</div>
       ${h.message?`
-      <div style="border:1px solid #ff71ce44;border-radius:2px;padding:18px 20px;
-        font-family:'Share Tech Mono',monospace;font-size:13px;line-height:1.8;
-        color:#fffb96;text-align:center;background:#ff71ce08;width:100%;">
-        ${esc(h.message)}
+      <div style="background:#ff2d7810;border:1px solid #ff2d7833;border-radius:12px;
+        padding:20px;font-size:15px;line-height:1.8;color:var(--text);width:100%;
+        font-weight:400;font-style:italic;">
+        "${esc(h.message)}"
       </div>`:''}
-      <button class="btn-secondary" onclick="leaveHunt()" style="margin-top:8px;">← LEAVE HUNT</button>
+      <button class="btn-ghost" onclick="leaveHunt()" style="margin-top:4px;">← Leave hunt</button>
     </div>`;
   }
 
   const leaderSection=h.leaderboard?`
   <div id="leaderboard-section" style="width:100%;">
-    <div class="label" style="margin-bottom:8px;">▸ LEADERBOARD</div>
+    <div class="neon-line" style="margin-bottom:12px;"></div>
+    <div class="label" style="margin-bottom:10px;">Leaderboard</div>
     <div id="leaderboard-rows">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#9d7fc4;text-align:center;padding:10px;letter-spacing:1px;">// waiting for players…</div>
+      <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);
+        text-align:center;padding:12px;animation:signalPulse 2s infinite;">
+        Waiting for players…
+      </div>
     </div>
   </div>`:'';
 
-  return `
+  return`
   <div class="gap fade-in" style="align-items:center;">
     <div style="text-align:center;">
-      <div style="font-family:'Orbitron',sans-serif;font-size:10px;color:#b967ff;letter-spacing:4px;margin-bottom:4px;">// HUNTING //</div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#ff71ce;letter-spacing:1px;">${esc(h.name)}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:3px;margin-bottom:4px;">HUNTING</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#ff2d78;">${esc(h.name)}</div>
     </div>
 
     ${compassSVG()}
 
     <div id="compass-btn-wrap" style="display:none;text-align:center;">
-      <button class="btn-main" style="font-size:11px;padding:12px 20px;width:auto;" onclick="requestCompass()">◈ ENABLE COMPASS</button>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#9d7fc4;margin-top:6px;letter-spacing:1px;">tap to activate bearing</div>
+      <button class="btn-main" style="font-size:14px;padding:14px 28px;width:auto;letter-spacing:2px;" onclick="requestCompass()">
+        🧭 Enable Compass
+      </button>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px;letter-spacing:1px;">tap to activate bearing</div>
     </div>
 
-    <div id="hunt-status" style="text-align:center;">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#9d7fc4;letter-spacing:2px;animation:pulse 2s infinite;">// acquiring signal…</div>
+    <div id="hunt-status" style="text-align:center;min-height:70px;display:flex;align-items:center;justify-content:center;">
+      <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);
+        letter-spacing:2px;animation:signalPulse 2s infinite;">Acquiring signal…</div>
     </div>
 
-    ${h.showDist?`<div id="hunt-dist" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#b967ff;text-align:center;letter-spacing:2px;"></div>`:''}
+    ${h.showDist?`<div id="hunt-dist" style="font-family:'Space Mono',monospace;font-size:12px;
+      color:#00f5d4;text-align:center;letter-spacing:2px;min-height:18px;"></div>`:''}
 
-    <div style="border:1px solid #ff71ce11;border-radius:2px;padding:10px 16px;text-align:center;width:100%;">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#9d7fc455;letter-spacing:3px;line-height:1.9;">
-        no map. no location.<br/>just a direction.
+    <div style="background:#ffffff05;border:1px solid #ffffff08;border-radius:10px;
+      padding:12px 18px;text-align:center;width:100%;">
+      <div style="font-size:12px;color:var(--muted);font-weight:300;line-height:1.8;">
+        No map. No distance. Just a bearing.<br/>
+        <span style="color:#ffffff44;font-size:11px;">Go figure it out.</span>
       </div>
     </div>
 
     ${leaderSection}
 
-    <button class="btn-secondary" onclick="leaveHunt()" style="font-size:10px;">← LEAVE HUNT</button>
+    <button class="btn-ghost" onclick="leaveHunt()" style="font-size:12px;">← Leave hunt</button>
   </div>`;
 }
 
-// ── updateCompass ─────────────────────────────────────────────────────────────
+// UPDATE COMPASS
 function updateCompass(){
   if(S.found){render();return;}
   const arrow=document.getElementById('compass-arrow');
   const status=document.getElementById('hunt-status');
   const distEl=document.getElementById('hunt-dist');
-  if(!arrow||!status) return;
+  if(!arrow||!status)return;
 
   if(!S.userPos){
     if(!S.spinInterval){
@@ -567,41 +566,46 @@ function updateCompass(){
     if(S.spinInterval){clearInterval(S.spinInterval);S.spinInterval=null;}
     arrow.setAttribute('transform',`rotate(${S.displayBearing},120,120)`);
     status.innerHTML=`
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#b967ff;letter-spacing:3px;margin-bottom:6px;">THE TREASURE LIES</div>
-      <div style="font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;color:#ff71ce;letter-spacing:2px;line-height:1;">${Math.round(S.displayBearing)}°</div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#9d7fc4;margin-top:4px;letter-spacing:4px;">${cardinal(S.displayBearing)}</div>`;
+      <div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:3px;margin-bottom:6px;">THE TREASURE LIES</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;color:#ff2d78;letter-spacing:3px;line-height:1;
+          text-shadow:0 0 30px #ff2d7888;">${Math.round(S.displayBearing)}°</div>
+        <div style="font-family:'Space Mono',monospace;font-size:12px;color:#00f5d4;margin-top:6px;letter-spacing:5px;">${cardinal(S.displayBearing)}</div>
+      </div>`;
     if(distEl&&S.currentDist!=null)
-      distEl.textContent='◈ '+fmtDist(S.currentDist,S.hunt.units);
+      distEl.textContent=fmtDist(S.currentDist,S.hunt.units)+' away';
   }
 }
 
-// ── Leaderboard ───────────────────────────────────────────────────────────────
+// LEADERBOARD
 function updateLeaderboard(){
   const rows=document.getElementById('leaderboard-rows');
-  if(!rows) return;
+  if(!rows)return;
   if(!S.leaders.length){
-    rows.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#9d7fc4;text-align:center;padding:10px;letter-spacing:1px;">// waiting for players…</div>`;
+    rows.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);
+      text-align:center;padding:12px;animation:signalPulse 2s infinite;">Waiting for players…</div>`;
     return;
   }
+  const medal=['🥇','🥈','🥉'];
   rows.innerHTML=S.leaders.slice(0,10).map((p,i)=>`
     <div class="leader-row ${p.id===S.playerId?'me':''}">
-      <div class="leader-rank">${i===0?'◈':i===1?'◇':i===2?'○':(i+1)}</div>
-      <div class="leader-name">${esc(p.name)}${p.id===S.playerId?' <span style="color:#01cdfe;font-size:10px;">(you)</span>':''}</div>
+      <div class="leader-rank">${medal[i]||(i+1)}</div>
+      <div class="leader-name">${esc(p.name)}${p.id===S.playerId?' <span style="color:#00f5d4;font-size:10px;font-family:Space Mono,monospace;">(you)</span>':''}</div>
       <div class="leader-dist">${S.hunt.showDist&&p.dist!=null?fmtDist(p.dist,S.hunt.units):'—'}</div>
     </div>`).join('');
 }
 
-// ── Map ───────────────────────────────────────────────────────────────────────
+// MAP
 function initMap(){
   if(S.pickMap){S.pickMap.remove();S.pickMap=null;S.pickMarker=null;}
-  const el=document.getElementById('map-picker');
-  if(!el) return;
+  const el=document.getElementById('map-picker');if(!el)return;
   S.pickMap=L.map('map-picker',{zoomControl:true,attributionControl:false}).setView([39.5,-98.35],3);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(S.pickMap);
   const icon=L.divIcon({
     className:'',
-    html:`<div style="width:12px;height:12px;background:#ff71ce;border-radius:50%;box-shadow:0 0 12px #ff71ce,0 0 24px #ff71ce88;border:2px solid #fff;"></div>`,
-    iconSize:[12,12],iconAnchor:[6,6]
+    html:`<div style="width:16px;height:16px;background:#ff2d78;border-radius:50%;
+      box-shadow:0 0 16px #ff2d78,0 0 32px #ff2d7866;border:2px solid #fff;"></div>`,
+    iconSize:[16,16],iconAnchor:[8,8]
   });
   S.pickMap.on('click',e=>{
     S.pickedLat=e.latlng.lat;S.pickedLon=e.latlng.lng;
@@ -621,41 +625,40 @@ function destroyMap(){
 }
 async function searchAddress(){
   const q=(document.getElementById('addr-input')||{}).value||'';
-  if(!q.trim()) return;
+  if(!q.trim())return;
   try{
-    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
-      {headers:{'Accept-Language':'en'}});
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,{headers:{'Accept-Language':'en'}});
     const data=await res.json();
     if(data&&data[0]){
       const lat=parseFloat(data[0].lat),lon=parseFloat(data[0].lon);
       S.pickMap.setView([lat,lon],14);
       S.pickMap.fire('click',{latlng:L.latLng(lat,lon)});
-    } else showErr('hide-err','// address not found');
-  }catch(e){showErr('hide-err','// search failed — check connection');}
+    } else showErr('hide-err','Address not found — try a different search.');
+  }catch(e){showErr('hide-err','Search failed — check connection.');}
 }
 function jumpToMyLocation(){
   const btn=document.getElementById('locbtn');
-  if(!navigator.geolocation){showErr('hide-err','// GPS not available');return;}
-  if(btn){btn.textContent='// acquiring…';btn.disabled=true;}
+  if(!navigator.geolocation){showErr('hide-err','GPS not available.');return;}
+  if(btn){btn.textContent='📡 Locating…';btn.disabled=true;}
   navigator.geolocation.getCurrentPosition(
     p=>{
-      if(btn){btn.textContent='⊕ JUMP TO MY LOCATION';btn.disabled=false;}
+      if(btn){btn.textContent='🎯 Jump to my location';btn.disabled=false;}
       if(S.pickMap){
         S.pickMap.setView([p.coords.latitude,p.coords.longitude],15);
         S.pickMap.fire('click',{latlng:L.latLng(p.coords.latitude,p.coords.longitude)});
       }
     },
     ()=>{
-      if(btn){btn.textContent='⊕ JUMP TO MY LOCATION';btn.disabled=false;}
-      showErr('hide-err','// location blocked — tap map instead');
+      if(btn){btn.textContent='🎯 Jump to my location';btn.disabled=false;}
+      showErr('hide-err','Location blocked — tap the map instead.');
     },
     {enableHighAccuracy:true,timeout:10000}
   );
 }
 
-// ── Actions ───────────────────────────────────────────────────────────────────
+// ACTIONS
 function doHide(){
-  if(S.pickedLat===null){showErr('hide-err','// tap the map to set a location');return;}
+  if(S.pickedLat===null){showErr('hide-err','Tap the map to set a location first.');return;}
   const name=(document.getElementById('tname')||{}).value||'Hidden Treasure';
   const message=(document.getElementById('opt-message')||{}).value||'';
   const showDist=document.getElementById('opt-showdist').checked;
@@ -663,50 +666,40 @@ function doHide(){
   const units=(document.getElementById('opt-units')||{}).value||'both';
   const radiusM=parseFloat(document.getElementById('opt-radius').value)||15;
   const hunt={lat:S.pickedLat,lon:S.pickedLon,name,message,showDist,leaderboard,units,radiusM,ts:Date.now()};
-  destroyMap();
-  S.hunt=hunt;
-  S.shareCode=encode(hunt);
-  S.screen='share';render();
+  destroyMap();S.hunt=hunt;S.shareCode=encode(hunt);S.screen='share';render();
 }
-
 function doJoin(){
   const raw=(document.getElementById('huntcode')||{}).value||'';
   const hunt=decode(raw);
-  if(!hunt){showErr('join-err','// invalid code — check and retry');return;}
+  if(!hunt){showErr('join-err','Invalid code — check it and try again.');return;}
   S.hunt=hunt;S.screen='name';render();
 }
-
 function doStartHunt(){
   if(S.hunt&&S.hunt.leaderboard){
     const n=(document.getElementById('player-name')||{}).value.trim();
-    if(!n){showErr('name-err','// callsign required');return;}
+    if(!n){showErr('name-err','Please enter your name.');return;}
     S.playerName=n;
   }
   startHunt(S.hunt);
 }
-
-function goScreen(screen){
-  stopHunt();destroyMap();S.screen=screen;render();
-}
-
+function goScreen(screen){stopHunt();destroyMap();S.screen=screen;render();}
 function copyLink(url){
   const btn=document.getElementById('copybtn');
   const ok=()=>{
-    if(btn){btn.textContent='✓ COPIED';btn.style.color='#01cdfe';btn.style.borderColor='#01cdfe';}
-    setTimeout(()=>{if(btn){btn.textContent='▶ COPY LINK';btn.style.color='';btn.style.borderColor='';}},2500);
+    if(btn){btn.textContent='✓ COPIED!';btn.style.background='linear-gradient(135deg,#00b894,#007a61)';}
+    setTimeout(()=>{if(btn){btn.textContent='COPY LINK';btn.style.background='';}},2500);
   };
   if(navigator.clipboard) navigator.clipboard.writeText(url).then(ok).catch(()=>clipFallback(url,ok));
   else clipFallback(url,ok);
 }
 function clipFallback(text,cb){
-  const el=document.createElement('textarea');
-  el.value=text;el.style.cssText='position:fixed;opacity:0;';
+  const el=document.createElement('textarea');el.value=text;el.style.cssText='position:fixed;opacity:0;';
   document.body.appendChild(el);el.focus();el.select();
   try{document.execCommand('copy');cb();}catch(e){}
   document.body.removeChild(el);
 }
 
-// ── Hunt engine ───────────────────────────────────────────────────────────────
+// HUNT ENGINE
 function attachOrientation(){
   function onOrient(e){
     if(e.webkitCompassHeading!=null&&e.webkitCompassHeading!==0){
@@ -724,50 +717,29 @@ function attachOrientation(){
   window.addEventListener('deviceorientation',onOrient,true);
   S.orientHandler=onOrient;
 }
-
 function requestCompass(){
-  if(typeof DeviceOrientationEvent!=='undefined'&&
-     typeof DeviceOrientationEvent.requestPermission==='function'){
-    DeviceOrientationEvent.requestPermission()
-      .then(r=>{if(r==='granted') attachOrientation();})
-      .catch(()=>{});
-  } else {
-    attachOrientation();
-  }
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted')attachOrientation();}).catch(()=>{});
+  } else {attachOrientation();}
 }
-
 function startHunt(hunt){
   stopHunt();
   S.found=false;S.userPos=null;S.gpsBearing=null;S.displayBearing=null;S.heading=null;S.currentDist=null;
   S.playerId=S.playerId||('p'+Math.random().toString(36).slice(2,10));
-  S.leaders=[];
-  S.screen='hunt';render();
-
-  if(!navigator.geolocation) return;
-
-  // Compass
-  if(typeof DeviceOrientationEvent!=='undefined'&&
-     typeof DeviceOrientationEvent.requestPermission==='function'){
-    const btn=document.getElementById('compass-btn-wrap');
-    if(btn) btn.style.display='block';
-  } else {
-    attachOrientation();
-  }
-
-  // Firebase leaderboard — keyed per hunt using stable huntId
+  S.leaders=[];S.screen='hunt';render();
+  if(!navigator.geolocation)return;
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    const btn=document.getElementById('compass-btn-wrap');if(btn)btn.style.display='block';
+  } else {attachOrientation();}
   if(hunt.leaderboard&&fbReady&&db){
     const hid=huntId(hunt);
     S.leaderRef=db.ref('hunts/'+hid+'/players');
     S.leaderUnsub=S.leaderRef.on('value',snap=>{
       const data=snap.val()||{};
-      S.leaders=Object.entries(data)
-        .map(([id,v])=>({id,...v}))
-        .sort((a,b)=>(a.dist??Infinity)-(b.dist??Infinity));
+      S.leaders=Object.entries(data).map(([id,v])=>({id,...v})).sort((a,b)=>(a.dist??Infinity)-(b.dist??Infinity));
       updateLeaderboard();
     });
   }
-
-  // GPS
   S.watchId=navigator.geolocation.watchPosition(
     p=>{
       const here={lat:p.coords.latitude,lon:p.coords.longitude};
@@ -776,57 +748,36 @@ function startHunt(hunt){
       S.gpsBearing=calcBearing(here,there);
       S.displayBearing=S.heading!=null?(S.gpsBearing-S.heading+360)%360:S.gpsBearing;
       S.currentDist=calcDistance(here,there);
-      if(S.currentDist<=(hunt.radiusM||15)&&!S.found) S.found=true;
-      // Push to leaderboard — playerId is key so only 1 row per player
+      if(S.currentDist<=(hunt.radiusM||15)&&!S.found)S.found=true;
       if(hunt.leaderboard&&fbReady&&db&&S.leaderRef){
-        S.leaderRef.child(S.playerId).set({
-          name:S.playerName||'Hunter',
-          dist:Math.round(S.currentDist),
-          ts:Date.now()
-        });
+        S.leaderRef.child(S.playerId).set({name:S.playerName||'Hunter',dist:Math.round(S.currentDist),ts:Date.now()});
       }
       updateCompass();
     },
-    ()=>{},
-    {enableHighAccuracy:true,maximumAge:2000,timeout:15000}
+    ()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:15000}
   );
 }
-
 function stopHunt(){
   if(S.watchId){navigator.geolocation.clearWatch(S.watchId);S.watchId=null;}
   if(S.orientHandler){window.removeEventListener('deviceorientation',S.orientHandler,true);S.orientHandler=null;}
   if(S.spinInterval){clearInterval(S.spinInterval);S.spinInterval=null;}
   if(S.leaderRef&&S.leaderUnsub){
     S.leaderRef.off('value',S.leaderUnsub);
-    // Remove player from leaderboard on leave
-    if(S.playerId) S.leaderRef.child(S.playerId).remove();
+    if(S.playerId)S.leaderRef.child(S.playerId).remove();
     S.leaderRef=null;S.leaderUnsub=null;
   }
 }
-
 function leaveHunt(){
-  stopHunt();
-  S.hunt=null;S.found=false;S.userPos=null;S.leaders=[];
-  S.screen='home';render();
+  stopHunt();S.hunt=null;S.found=false;S.userPos=null;S.leaders=[];S.screen='home';render();
 }
 
-// ── Utils ─────────────────────────────────────────────────────────────────────
-function showErr(id,msg){
-  const el=document.getElementById(id);
-  if(el){el.textContent=msg;el.classList.remove('hidden');}
-}
-function esc(s){
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function showErr(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;el.classList.remove('hidden');}}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
 window.addEventListener('load',()=>{
   const p=new URLSearchParams(window.location.search);
   const code=p.get('hunt');
-  if(code){
-    const hunt=decode(code);
-    if(hunt){S.hunt=hunt;S.screen='name';render();return;}
-  }
+  if(code){const hunt=decode(code);if(hunt){S.hunt=hunt;S.screen='name';render();return;}}
   render();
 });
 </script>
