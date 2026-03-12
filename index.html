@@ -345,15 +345,12 @@ function tmplHunt(){
     </div>`;
   }
 
-  const leaderHtml = h.leaderboard && S.leaders.length > 0 ? `
-    <div style="margin-top:4px;">
+  const leaderHtml = h.leaderboard ? `
+    <div id="leaderboard-section" style="width:100%;">
       <div class="section-label" style="margin-bottom:8px;">🏆 LEADERBOARD</div>
-      ${S.leaders.slice(0,10).map((p,i)=>`
-        <div class="leader-row ${p.id===S.playerId?'leader-me':''}">
-          <div class="leader-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)}</div>
-          <div class="leader-name">${esc(p.name)}${p.id===S.playerId?' (you)':''}</div>
-          <div class="leader-dist">${h.showDist&&p.dist!=null?fmtDist(p.dist,h.units):'—'}</div>
-        </div>`).join('')}
+      <div id="leaderboard-rows">
+        <div style="color:#ffffff33;font-size:13px;text-align:center;padding:10px;">Waiting for players…</div>
+      </div>
     </div>` : '';
 
   return `
@@ -608,9 +605,7 @@ function startHunt(hunt){
       S.leaders=Object.entries(data)
         .map(([id,v])=>({id,...v}))
         .sort((a,b)=>(a.dist??Infinity)-(b.dist??Infinity));
-      // Re-render leaderboard in place
-      const lboard=document.getElementById('leaderboard-section');
-      if(lboard) lboard.outerHTML=leaderHtmlBlock();
+      leaderHtmlBlock();
     });
   }
 
@@ -641,16 +636,18 @@ function startHunt(hunt){
 
 function leaderHtmlBlock(){
   const h=S.hunt;
-  if(!h||!h.leaderboard||!S.leaders.length) return '<div id="leaderboard-section"></div>';
-  return `<div id="leaderboard-section" style="width:100%;">
-    <div class="section-label" style="margin-bottom:8px;">🏆 LEADERBOARD</div>
-    ${S.leaders.slice(0,10).map((p,i)=>`
-      <div class="leader-row ${p.id===S.playerId?'leader-me':''}">
-        <div class="leader-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)}</div>
-        <div class="leader-name">${esc(p.name)}${p.id===S.playerId?' (you)':''}</div>
-        <div class="leader-dist">${h.showDist&&p.dist!=null?fmtDist(p.dist,h.units):'—'}</div>
-      </div>`).join('')}
-  </div>`;
+  const rows=document.getElementById('leaderboard-rows');
+  if(!rows) return;
+  if(!S.leaders.length){
+    rows.innerHTML='<div style="color:#ffffff33;font-size:13px;text-align:center;padding:10px;">Waiting for players…</div>';
+    return;
+  }
+  rows.innerHTML=S.leaders.slice(0,10).map((p,i)=>`
+    <div class="leader-row ${p.id===S.playerId?'leader-me':''}">
+      <div class="leader-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)}</div>
+      <div class="leader-name">${esc(p.name)}${p.id===S.playerId?' (you)':''}</div>
+      <div class="leader-dist">${h.showDist&&p.dist!=null?fmtDist(p.dist,h.units):'—'}</div>
+    </div>`).join('');
 }
 
 function stopHunt(){
